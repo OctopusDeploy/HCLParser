@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using Sprache;
 
-namespace Octopus.Core.Parsers.Hcl
+namespace Octopus.CoreParsers.Hcl
 {
     /// <summary>
     /// A Sprache parser for the HCL library.

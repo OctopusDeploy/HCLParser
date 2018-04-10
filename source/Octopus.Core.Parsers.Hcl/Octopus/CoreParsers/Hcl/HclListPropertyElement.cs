@@ -1,7 +1,7 @@
 ﻿using System.Linq;
 using System.Text.RegularExpressions;
 
-namespace Octopus.Core.Parsers.Hcl
+namespace Octopus.CoreParsers.Hcl
 {
     /// <summary>
     /// Represents a list assigned to a property

@@ -2,10 +2,9 @@
 using System.Linq;
 using FluentAssertions;
 using NUnit.Framework;
-using Octopus.Core.Parsers.Hcl;
 using Sprache;
 
-namespace Octopus.Tests.Octopus.Terraform.Templates
+namespace Octopus.CoreParsers.Hcl
 {
     /// <summary>
     /// Tested based on https://github.com/hashicorp/hcl/blob/a4b07c25de5ff55ad3b8936cea69a79a3d95a855/hcl/parser/parser_test.go

@@ -1,23 +1,18 @@
 ﻿using System.Linq;
 
-namespace Octopus.Core.Parsers.Hcl
+namespace Octopus.CoreParsers.Hcl
 {
     /// <summary>
-    /// Represents a map assigned to a property
+    /// Represents a map
     /// </summary>
-    public class HclMapPropertyElement : HclMapElement
+    public class HclMapElement : HclElement
     {
-        public override string Type => MapPropertyType;
+        public override string Type => MapType;
         
         public override string ToString(bool naked, int indent)
         {
-            if (naked)
-            {
-                return base.ToString(true, indent);
-            }
-            
             var indentString = GetIndent(indent);
-            return indentString + OriginalName + " = {\n" +
+            return indentString + "{\n" +
                 string.Join("\n", Children?.Select(child => child.ToString(indent + 1)) ?? Enumerable.Empty<string>()) +
                 "\n" + indentString + "}";
         }

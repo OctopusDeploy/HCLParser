@@ -1,6 +1,6 @@
 ﻿using System.Linq;
 
-namespace Octopus.Core.Parsers.Hcl
+namespace Octopus.CoreParsers.Hcl
 {
     /// <summary><![CDATA[
     /// Represents the value of a heredoc string assigned to a property.

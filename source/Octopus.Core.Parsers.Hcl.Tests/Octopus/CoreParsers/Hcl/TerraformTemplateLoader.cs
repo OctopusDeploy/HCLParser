@@ -1,7 +1,7 @@
 ﻿using System.IO;
 using System.Reflection;
 
-namespace Octopus.Core.Parsers.Hcl
+namespace Octopus.CoreParsers.Hcl
 {
     public class TerraformTemplateLoader
     {

@@ -4,7 +4,7 @@ using System.Linq;
 using Octopus.CoreUtilities.Extensions;
 using Sprache;
 
-namespace Octopus.Core.Parsers.Hcl
+namespace Octopus.CoreParsers.Hcl
 {
     public class HclElement
     {

@@ -20,11 +20,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Octopus.Core.Parsers.Hcl\Octopus.Core.Parsers.Hcl.csproj" />
+    <ProjectReference Include="..\Octopus.Core.Parsers.Hcl\Octopus.CoreParsers.Hcl.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Octopus\Core\Parsers\Hcl\TemplateSamples\*">
+    <None Update="Octopus\CoreParsers\Hcl\TemplateSamples\*">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>

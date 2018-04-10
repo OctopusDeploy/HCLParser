@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27604.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Octopus.Core.Parsers.Hcl.Tests", "Octopus.Core.Parsers.Hcl.Tests\Octopus.Core.Parsers.Hcl.Tests.csproj", "{C2D0CE75-2222-4B3B-8D02-D5DE8E2E887B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Octopus.CoreParsers.Hcl.Tests", "Octopus.Core.Parsers.Hcl.Tests\Octopus.CoreParsers.Hcl.Tests.csproj", "{C2D0CE75-2222-4B3B-8D02-D5DE8E2E887B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Octopus.Core.Parsers.Hcl", "Octopus.Core.Parsers.Hcl\Octopus.Core.Parsers.Hcl.csproj", "{2C02A830-2CA9-4547-B49A-60B7E8DB6B96}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Octopus.CoreParsers.Hcl", "Octopus.Core.Parsers.Hcl\Octopus.CoreParsers.Hcl.csproj", "{2C02A830-2CA9-4547-B49A-60B7E8DB6B96}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

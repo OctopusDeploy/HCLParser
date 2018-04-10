@@ -1,6 +1,6 @@
 ﻿using System.Linq;
 
-namespace Octopus.Core.Parsers.Hcl
+namespace Octopus.CoreParsers.Hcl
 {
     /// <summary>
     /// Represents a string assigned to a property
