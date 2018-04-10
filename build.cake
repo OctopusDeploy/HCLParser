@@ -22,7 +22,7 @@ var artifactsDir = "./artifacts";
 var assetDir = "./BuildAssets";
 var globalAssemblyFile = "./source/Solution Items/VersionInfo.cs";
 var solutionToBuild = "./source/Octopus.Core.Parsers.Hcl.sln";
-var fileToPublish = "./source/Octopus.Core.Parsers.Hcl/bin/Release/netcoreapp2.0/Octopus.Core.Parsers.Hcl.dll";
+var directoryToPublish = "./source/Octopus.Core.Parsers.Hcl/bin/Release";
 var cleanups = new List<IDisposable>(); 
 
 
@@ -41,7 +41,7 @@ Setup(context =>
         BuildSystem.TeamCity.SetBuildNumber(gitVersionInfo.NuGetVersion);
     if(BuildSystem.IsRunningOnAppVeyor)
         AppVeyor.UpdateBuildVersion(gitVersionInfo.NuGetVersion);
-    Information("Building Octopus.Core.Parsers.Hcl v{0}", nugetVersion);
+    Information("Building Octopus.CoreParsers.Hcl v{0}", nugetVersion);
 });
 
 Teardown(context =>
@@ -103,11 +103,11 @@ Task("__Build")
 Task("__Pack")
     .Does(() => {
         var nugetPackDir = Path.Combine(publishDir, "nuget");
-        var nuspecFile = "Octopus.Core.Parsers.Hcl.nuspec";
+        var nuspecFile = "Octopus.CoreParsers.Hcl.nuspec";
         
 		CreateDirectory(nugetPackDir);
         CopyFileToDirectory(Path.Combine(assetDir, nuspecFile), nugetPackDir);
-		CopyFileToDirectory(fileToPublish, nugetPackDir);
+		CopyDirectory(directoryToPublish, nugetPackDir);
 
         NuGetPack(Path.Combine(nugetPackDir, nuspecFile), new NuGetPackSettings {
             Version = nugetVersion,
@@ -119,14 +119,14 @@ Task("__Publish")
     .WithCriteria(BuildSystem.IsRunningOnTeamCity)
     .Does(() =>
 {
-    NuGetPush($"{artifactsDir}/Octopus.Core.Parsers.Hcl.{nugetVersion}.nupkg", new NuGetPushSettings {
+    NuGetPush($"{artifactsDir}/Octopus.CoreParsers.Hcl.{nugetVersion}.nupkg", new NuGetPushSettings {
 		Source = "https://octopus.myget.org/F/octopus-dependencies/api/v3/index.json",
 		ApiKey = EnvironmentVariable("MyGetApiKey")
 	});
 	
     if (gitVersionInfo.PreReleaseLabel == "")
     {
-        NuGetPush($"{artifactsDir}/Octopus.Core.Parsers.Hcl.{nugetVersion}.nupkg", new NuGetPushSettings {
+        NuGetPush($"{artifactsDir}/Octopus.CoreParsers.Hcl.{nugetVersion}.nupkg", new NuGetPushSettings {
             Source = "https://www.nuget.org/api/v2/package",
             ApiKey = EnvironmentVariable("NuGetApiKey")
         });
@@ -139,7 +139,7 @@ Task("__CopyToLocalPackages")
     .Does(() =>
 {
     CreateDirectory(localPackagesDir);
-    CopyFileToDirectory(Path.Combine(artifactsDir, $"Octopus.Core.Parsers.Hcl.{nugetVersion}.nupkg"), localPackagesDir);
+    CopyFileToDirectory(Path.Combine(artifactsDir, $"Octopus.CoreParsers.Hcl.{nugetVersion}.nupkg"), localPackagesDir);
 });
 
 private class AutoRestoreFile : IDisposable

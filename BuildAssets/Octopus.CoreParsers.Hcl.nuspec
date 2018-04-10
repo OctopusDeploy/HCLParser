@@ -24,6 +24,7 @@
     </dependencies>
   </metadata>
   <files>
-	<file src="*" target="lib\netcoreapp2.0" />
+	<file src="netcoreapp2.0\Octopus.Core.Parsers.Hcl.dll" target="lib\netcoreapp2.0" />
+	<file src="net40\Octopus.Core.Parsers.Hcl.dll" target="lib\net40" />
   </files>
 </package>
