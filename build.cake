@@ -21,7 +21,7 @@ var localPackagesDir = "../LocalPackages";
 var artifactsDir = "./artifacts";
 var assetDir = "./BuildAssets";
 var globalAssemblyFile = "./source/Solution Items/VersionInfo.cs";
-var solutionToBuild = "./source/Octopus.Core.Parsers.Hcl.sln";
+var solutionToBuild = "./source/Octopus.CoreParsers.Hcl.sln";
 var directoryToPublish = "./source/Octopus.Core.Parsers.Hcl/bin/Release";
 var cleanups = new List<IDisposable>(); 
 
