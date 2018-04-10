@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd" xmlns:octopus="http://octopus.org">
   <metadata>
-    <id>Octopus.Core.Parsers.Hcl</id>
+    <id>Octopus.CoreParsers.Hcl</id>
     <title>Octopus HCL Parser</title>
     <version>$version$</version>
     <authors>Octopus Deploy</authors>
