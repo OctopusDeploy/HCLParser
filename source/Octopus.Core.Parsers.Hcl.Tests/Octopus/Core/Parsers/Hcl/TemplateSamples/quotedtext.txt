@@ -1,0 +1,1 @@
+source      = "\"altitude-nyc-abcd-2017-stage.storage.googleapis.com\""

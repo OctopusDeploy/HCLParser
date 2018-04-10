@@ -1,0 +1,1 @@
+one = "$${replace(var.sub_domain, \".\", \"\\.\")}"
