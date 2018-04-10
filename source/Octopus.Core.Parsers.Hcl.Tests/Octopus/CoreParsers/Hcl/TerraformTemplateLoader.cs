@@ -9,7 +9,7 @@ namespace Octopus.CoreParsers.Hcl
         {
             var templatesPath = Path.Combine(
                 Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
-                @"Octopus\Core\Parsers\Hcl\TemplateSamples");
+                @"Octopus\CoreParsers\Hcl\TemplateSamples");
 
             return HclParser.NormalizeLineEndings(File.ReadAllText(Path.Combine(templatesPath, fileName))).Trim();
         }
