@@ -119,9 +119,10 @@ Task("__Publish")
     .WithCriteria(BuildSystem.IsRunningOnTeamCity)
     .Does(() =>
 {
-    NuGetPush($"{artifactsDir}/Octopus.CoreParsers.Hcl.{nugetVersion}.nupkg", new NuGetPushSettings {
-		Source = "https://octopus.myget.org/F/octopus-dependencies/api/v3/index.json",
-		ApiKey = EnvironmentVariable("MyGetApiKey")
+	
+	NuGetPush($"{artifactsDir}/Octopus.CoreParsers.Hcl.{nugetVersion}.nupkg", new NuGetPushSettings {
+		Source = "https://f.feedz.io/octopus-deploy/dependencies/nuget",
+		ApiKey = EnvironmentVariable("FeedzIoApiKey")
 	});
 	
     if (gitVersionInfo.PreReleaseLabel == "")
