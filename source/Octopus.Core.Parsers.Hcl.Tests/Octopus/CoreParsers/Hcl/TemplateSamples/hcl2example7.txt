@@ -1,0 +1,6 @@
+﻿variable "network" {
+  vpc = object({
+    id         = string
+    cidr_block = string
+  })
+}

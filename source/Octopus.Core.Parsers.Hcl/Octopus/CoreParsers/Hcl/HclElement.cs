@@ -21,7 +21,7 @@ namespace Octopus.CoreParsers.Hcl
         /// <summary>
         /// The type defining a for loop
         /// </summary>
-        public const string ForLoopType = "ForLoop";
+        public const string ForLoopType = "#FORLOOP";
 
         /// <summary>
         /// The type for string, number and boolean elements
@@ -44,6 +44,11 @@ namespace Octopus.CoreParsers.Hcl
         public const string MapType = "Map";
 
         /// <summary>
+        /// The type for properties holding types like set(), map(), list(), object() or tuple()
+        /// </summary>
+        public const string TypePropertyType = "TypeProperty";
+
+        /// <summary>
         /// The type for string, number and boolean elements
         /// </summary>
         public const string StringPropertyType = "StringProperty";
@@ -62,6 +67,26 @@ namespace Octopus.CoreParsers.Hcl
         /// The type for map elements
         /// </summary>
         public const string MapPropertyType = "MapProperty";
+
+        /// <summary>
+        /// The type defining an object property
+        /// </summary>
+        public const string ObjectPropertyType = "ObjectProperty";
+
+        /// <summary>
+        /// The type defining an tuple property
+        /// </summary>
+        public const string TuplePropertyType = "TupleProperty";
+
+        /// <summary>
+        /// The type defining an set property
+        /// </summary>
+        public const string SetPropertyType = "SetProperty";
+
+        /// <summary>
+        /// The type defining an primitave property
+        /// </summary>
+        public const string PrimitivePropertyType = "PrimitiveProperty";
 
         /// <summary>
         /// The name of the element, #COMMENT for comments, or #ROOT for the

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Octopus.CoreUtilities.Extensions;
 using Sprache;
 
 namespace Octopus.CoreParsers.Hcl
@@ -17,11 +18,20 @@ namespace Octopus.CoreParsers.Hcl
     /// </summary>
     public class HclParser
     {
+        /// <summary>
+        /// New in 0.12 - the ability to mark a block as dynamic
+        /// </summary>
         public static readonly Parser<string> Dynamic =
             Parse.String("dynamic").Text().Named("Dynamic configuration block");
 
+        /// <summary>
+        /// New in 0.12 - the start of an "if" statement
+        /// </summary>
         public static readonly Parser<string> IfToken = Parse.String("if").Text().Token().Named("If statement");
 
+        /// <summary>
+        /// New in 0.12 - the characters before the start of an if statement
+        /// </summary>
         public static readonly Regex StartOfIfStatement = new Regex(@"\s(?=if)");
 
         /// <summary>
@@ -382,6 +392,79 @@ namespace Octopus.CoreParsers.Hcl
                 select value).Token();
 
         /// <summary>
+        /// New in 0.12 - An primitive definition
+        /// </summary>
+        public static readonly Parser<HclElement> PrimitiveTypeProperty =
+            (from value in Parse.String("string")
+                    .Or(Parse.String("number"))
+                    .Or(Parse.String("bool"))
+                    .Text()
+                select new HclPrimitiveTypeElement {Value = value}).Token();
+
+        /// <summary>
+        /// New in 0.12 - An object definition
+        /// </summary>
+        public static readonly Parser<HclElement> ObjectTypeProperty =
+            (from objectType in Parse.String("object({").Token()
+                from value in HclElementTypedObjectProperty
+                    .Or(PrimitiveTypeObjectProperty)
+                    .Many()
+                from closeBracket in Parse.String("})").Token()
+                select new HclObjectTypeElement {Children = value}).Token();
+
+        /// <summary>
+        /// New in 0.12 - An set definition
+        /// </summary>
+        public static readonly Parser<HclElement> SetTypeProperty =
+            (from objectType in Parse.String("set(").Token()
+                from value in MapTypeProperty
+                    .Or(ObjectTypeProperty)
+                    .Or(ListTypeProperty)
+                    .Or(SetTypeProperty)
+                    .Or(TupleTypeProperty)
+                    .Or(PrimitiveTypeObjectProperty)
+                from closeBracket in Parse.String(")").Token()
+                select new HclSetTypeElement {Children = value.ToEnumerable()}).Token();
+
+        /// <summary>
+        /// New in 0.12 - An list definition
+        /// </summary>
+        public static readonly Parser<HclElement> ListTypeProperty =
+            (from objectType in Parse.String("list(").Token()
+                from value in MapTypeProperty
+                    .Or(ObjectTypeProperty)
+                    .Or(ListTypeProperty)
+                    .Or(SetTypeProperty)
+                    .Or(TupleTypeProperty)
+                    .Or(PrimitiveTypeObjectProperty)
+                from closeBracket in Parse.String(")").Token()
+                select new HclListTypeElement{Children = value.ToEnumerable()}).Token();
+
+        /// <summary>
+        /// New in 0.12 - An tuple definition. TODO: this has multiple types. Fix up "ListValue".
+        /// </summary>
+        public static readonly Parser<HclElement> TupleTypeProperty =
+            (from objectType in Parse.String("tuple([").Token()
+                from value in ListValue
+                from closeBracket in Parse.String("])").Token()
+                select new HclTupleTypeElement {Children = value.Children}).Token();
+
+        /// <summary>
+        /// New in 0.12 - An map definition
+        /// </summary>
+        public static readonly Parser<HclElement> MapTypeProperty =
+            (from objectType in Parse.String("map(").Token()
+                from value in MapTypeProperty
+                    .Or(ObjectTypeProperty)
+                    .Or(ListTypeProperty)
+                    .Or(SetTypeProperty)
+                    .Or(TupleTypeProperty)
+                    .Or(PrimitiveTypeObjectProperty)
+                from closeBracket in Parse.String(")").Token()
+                select new HclMapTypeElement {Children = value.ToEnumerable()}).Token();
+
+
+        /// <summary>
         /// The value of an individual item in a list
         /// </summary>
         public static readonly Parser<HclElement> LiteralListValue =
@@ -426,7 +509,7 @@ namespace Octopus.CoreParsers.Hcl
         public static readonly Parser<char> Comma = Parse.Char(',').Token();
 
         /// <summary>
-        /// Represets the contents of a map
+        /// Represents the contents of a map
         /// </summary>
         public static readonly Parser<HclElement> MapValue =
         (
@@ -546,7 +629,7 @@ namespace Octopus.CoreParsers.Hcl
             select new HclMapPropertyElement {Name = name, Children = properties.Children};
 
         /// <summary>
-        /// Represent a for loop generating an object assigned to a property
+        /// New in 0.12 - Represent a for loop generating an object assigned to a property
         /// </summary>
         public static readonly Parser<HclElement> HclElementForLoopObjectProperty =
             from name in Identifier.Or(StringLiteralQuote)
@@ -555,13 +638,35 @@ namespace Octopus.CoreParsers.Hcl
             select new HclMapPropertyElement {Name = name, Children = properties.Children};
 
         /// <summary>
-        /// Represent a for loop generating an list assigned to a property
+        /// New in 0.12 - Represent a for loop generating an list assigned to a property
         /// </summary>
         public static readonly Parser<HclElement> HclElementForLoopListProperty =
             from name in Identifier.Or(StringLiteralQuote)
             from eql in Equal
             from value in ForLoopListValue
             select new HclListPropertyElement {Name = name, Children = value.Children, NameQuoted = false};
+
+        /// <summary>
+        /// New in 0.12 - Represent a property holding a type
+        /// </summary>
+        public static readonly Parser<HclElement> HclElementTypedObjectProperty =
+            from name in Identifier.Or(StringLiteralQuote)
+            from eql in Equal
+            from value in MapTypeProperty
+                .Or(ObjectTypeProperty)
+                .Or(ListTypeProperty)
+                .Or(SetTypeProperty)
+                .Or(TupleTypeProperty)
+            select new HclTypePropertyElement {Name = name, Children = value.ToEnumerable(), NameQuoted = false};
+
+        /// <summary>
+        /// New in 0.12 - An plain type definition
+        /// </summary>
+        public static readonly Parser<HclElement> PrimitiveTypeObjectProperty =
+            from name in Identifier.Or(StringLiteralQuote)
+            from eql in Equal
+            from value in PrimitiveTypeProperty
+            select new HclTypePropertyElement {Name = name, Children = value.ToEnumerable(), NameQuoted = false};
 
         /// <summary>
         /// Represents a named element with child properties
@@ -605,6 +710,7 @@ namespace Octopus.CoreParsers.Hcl
         /// </summary>
         public static readonly Parser<IEnumerable<HclElement>> HclProperties =
             (from value in HclNameElement
+                    .Or(HclElementTypedObjectProperty)
                     .Or(ForLoopObjectValue)
                     .Or(HclNameValueElement)
                     .Or(HclNameValueTypeElement)

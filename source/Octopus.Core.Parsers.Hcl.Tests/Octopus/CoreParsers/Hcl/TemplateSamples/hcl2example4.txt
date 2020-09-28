@@ -1,0 +1,12 @@
+﻿variable "network" {
+  type = object({
+    vpc = object({
+      id         = string
+      cidr_block = string
+    })
+    subnets = set(object({
+      id         = string
+      cidr_block = string
+    }))
+  })
+}

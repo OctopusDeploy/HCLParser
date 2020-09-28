@@ -74,13 +74,39 @@ namespace Octopus.CoreParsers.Hcl
         {
             try
             {
-                var result = HclParser.ListIndex.Parse(index);
+                HclParser.ListIndex.Parse(index);
                 Assert.Fail("Parsing should have failed");
             }
             catch
             {
                 // all good
             }
+        }
+
+        [TestCase("hcl2example1.txt")]
+        [TestCase("hcl2example2.txt")]
+        [TestCase("hcl2example3.txt")]
+        [TestCase("hcl2example4.txt")]
+        [TestCase("hcl2example5.txt")]
+        [TestCase("hcl2example6.txt")]
+        [TestCase("hcl2example7.txt")]
+        [TestCase("hcl2example8.txt")]
+        [TestCase("hcl2example9.txt")]
+        public void GenericExamples(string file)
+        {
+            var template = TerraformLoadTemplate(file);
+            var parsed = HclParser.HclTemplate.Parse(template);
+            var reprinted = parsed.ToString();
+        }
+
+        [Test]
+        [TestCase("hcl2objectproperty.txt", "vpc = object({\n    id = \"string\"\n    cidr_block = \"string\"\n})")]
+        [TestCase("hcl2objectproperty2.txt", "vpc = object({\n    id = \"string\"\n    cidr_block = \"string\"\n    vpc = object({\n        id = \"string\"\n        cidr_block = \"string\"\n    })\n})")]
+        public void ObjectProperty(string file, string result)
+        {
+            var template = TerraformLoadTemplate(file);
+            var parsed = HclParser.HclElementTypedObjectProperty.Parse(template);
+            parsed.ToString().Should().Be(result);
         }
     }
 }
