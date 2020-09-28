@@ -57,6 +57,9 @@
     <None Update="Octopus\CoreParsers\Hcl\TemplateSamples\hcl2example9.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Octopus\CoreParsers\Hcl\TemplateSamples\hcl2example10.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
   <ItemGroup>

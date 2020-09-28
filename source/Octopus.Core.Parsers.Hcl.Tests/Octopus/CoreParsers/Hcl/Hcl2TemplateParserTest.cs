@@ -92,6 +92,7 @@ namespace Octopus.CoreParsers.Hcl
         [TestCase("hcl2example7.txt")]
         [TestCase("hcl2example8.txt")]
         [TestCase("hcl2example9.txt")]
+        [TestCase("hcl2example10.txt")]
         public void GenericExamples(string file)
         {
             var template = TerraformLoadTemplate(file);
