@@ -30,5 +30,7 @@ output "environment" {
       s.name => s.value
       if s.namespace == "aws:ec2:vpc"
     }
+    vpc_settings2 = [for k, v in var.map : length(k) + length(v)]
+    vpc_settings3 = {for s in var.list : substr(s, 0, 1) => s... if s != ""}
   }
 }

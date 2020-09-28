@@ -27,6 +27,14 @@
     <None Update="Octopus\CoreParsers\Hcl\TemplateSamples\*">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Octopus\CoreParsers\Hcl\TemplateSamples\hcl2forloop2.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Octopus\CoreParsers\Hcl\TemplateSamples\hcl2ifstatement2.txt" />
+    <Content Include="Octopus\CoreParsers\Hcl\TemplateSamples\hcl2ifstatement3.txt" />
   </ItemGroup>
 
 </Project>

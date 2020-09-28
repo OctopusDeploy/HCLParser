@@ -1,0 +1,1 @@
+﻿ if s.namespace == "aws:ec2:vpc"

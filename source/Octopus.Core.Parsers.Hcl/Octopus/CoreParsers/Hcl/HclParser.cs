@@ -19,9 +19,9 @@ namespace Octopus.CoreParsers.Hcl
         public static readonly Parser<string> Dynamic =
             Parse.String("dynamic").Text().Named("Dynamic configuration block");
 
-        public static readonly Parser<string> IfToken = Parse.String("if").Text().WithWhiteSpace().Named("If statement");
+        public static readonly Parser<string> IfToken = Parse.String("if").Text().Token().Named("If statement");
 
-        public static readonly Regex UpToIf = new Regex(@"^(?=\s*if)");
+        public static readonly Regex StartOfIfStatement = new Regex(@"\s(?=if)");
 
         /// <summary>
         /// The \n char
@@ -189,10 +189,9 @@ namespace Octopus.CoreParsers.Hcl
         /// Matches the plain text in a string, or the Interpolation block
         /// </summary>
         public static readonly Parser<string> IfStatement =
-            from lineBreak in Parse.Char(LineBreak)
             from ifIdentifier in IfToken
             from ifStatement in Parse.AnyChar.Except(DelimiterEndSquare.Or(DelimiterEndCurly)).Many().Text()
-            select lineBreak + ifIdentifier + " " + ifStatement;
+            select ifIdentifier + " " + ifStatement;
 
         /// <summary>
         /// Matches a for loop
@@ -205,7 +204,7 @@ namespace Octopus.CoreParsers.Hcl
             from inValue in Parse.AnyChar.Except(Parse.Char(':')).Many().Text()
             from colonIdentifier in Parse.Char(':').Token()
             from statements in Parse.AnyChar
-                .Except(Parse.Regex(UpToIf))
+                .Except(Parse.Regex(StartOfIfStatement))
                 .Except(DelimiterEndCurly)
                 .Many()
                 .Text()
@@ -224,13 +223,13 @@ namespace Octopus.CoreParsers.Hcl
             from inValue in Parse.AnyChar.Except(Parse.Char(':')).Many().Text()
             from colonIdentifier in Parse.Char(':').Token()
             from statements in Parse.AnyChar
-                .Except(Parse.Regex(UpToIf))
+                .Except(Parse.Regex(StartOfIfStatement))
                 .Except(DelimiterEndSquare)
                 .Many()
                 .Text()
             from ifStatement in IfStatement.Optional()
             from endCurly in DelimiterEndSquare.Token()
-            select new HclForLoopElement(curly, endCurly, forVar.Trim(), inValue.Trim(), statements.Trim(), ifStatement.GetOrDefault().Trim());
+            select new HclForLoopElement(curly, endCurly, forVar.Trim(), inValue.Trim(), statements.Trim(), ifStatement.GetOrDefault()?.Trim() ?? string.Empty);
 
         /// <summary>
         /// Matches the plain text in a string, or the Interpolation block

@@ -16,9 +16,11 @@ namespace Octopus.CoreParsers.Hcl
         }
 
         [Test]
-        public void ForLoop()
+        [TestCase("hcl2forloop.txt")]
+        [TestCase("hcl2forloop2.txt")]
+        public void ForLoop(string file)
         {
-            var template = TerraformLoadTemplate("hcl2forloop.txt");
+            var template = TerraformLoadTemplate(file);
             var parsed = HclParser.ForLoopObjectValue.Parse(template);
             parsed.StartBracket.Should().Be('{');
             parsed.EndBracket.Should().Be('}');
@@ -26,6 +28,17 @@ namespace Octopus.CoreParsers.Hcl
             parsed.Collection.Should().Be("aws_elastic_beanstalk_environment.example.all_settings");
             parsed.Statements.Should().Be("s.name => s.value");
             parsed.IfStatement.Should().Be("if s.namespace == \"aws:ec2:vpc\"");
+        }
+
+        [Test]
+        [TestCase("hcl2ifstatement.txt")]
+        [TestCase("hcl2ifstatement2.txt")]
+        [TestCase("hcl2ifstatement3.txt")]
+        public void IfStatement(string file)
+        {
+            var template = TerraformLoadTemplate(file);
+            var parsed = HclParser.IfStatement.Parse(template);
+            parsed.Should().Be("if s.namespace == \"aws:ec2:vpc\"");
         }
     }
 }
