@@ -109,6 +109,9 @@ namespace Octopus.CoreParsers.Hcl
             var reprinted = parsed.ToString();
         }
 
+        /// <summary>
+        /// Examples from https://github.com/hashicorp/hcl/tree/hcl2/hclwrite/fuzz
+        /// </summary>
         [Test]
         [TestCase("attr.hcl")]
         [TestCase("attr-expr.hcl")]
@@ -141,6 +144,37 @@ namespace Octopus.CoreParsers.Hcl
         public void CorpusExamples(string file)
         {
             var template = TerraformLoadTemplate(file, "corpus");
+            var parsed = HclParser.HclTemplate.Parse(template);
+            var reprinted = parsed.ToString();
+        }
+
+        [TestCase("hcl2githubexample1.tf")]
+        [TestCase("hcl2githubexample2.tf")]
+        [TestCase("hcl2githubexample3.tf")]
+        [TestCase("hcl2githubexample4.tf")]
+        [TestCase("hcl2githubexample5.tf")]
+        [TestCase("hcl2githubexample6.tf")]
+        [TestCase("hcl2githubexample7.tf")]
+        [TestCase("hcl2githubexample8.tf")]
+        [TestCase("hcl2githubexample9.tf")]
+        [TestCase("hcl2githubexample10.tf")]
+        [TestCase("hcl2githubexample11.tf")]
+        [TestCase("hcl2githubexample12.tf")]
+        [TestCase("hcl2githubexample13.tf")]
+        [TestCase("hcl2githubexample14.tf")]
+        [TestCase("hcl2githubexample15.tf")]
+        [TestCase("hcl2githubexample16.tf")]
+        [TestCase("hcl2githubexample17.tf")]
+        [TestCase("hcl2githubexample18.tf")]
+        [TestCase("hcl2githubexample19.tf")]
+        [TestCase("hcl2githubexample20.tf")]
+        [TestCase("hcl2githubexample21.tf")]
+        [TestCase("hcl2githubexample22.tf")]
+        [TestCase("hcl2githubexample23.tf")]
+        [TestCase("hcl2githubexample24.tf")]
+        public void RandomGitHubExamples(string file)
+        {
+            var template = TerraformLoadTemplate(file, HCL2TemplateSamples);
             var parsed = HclParser.HclTemplate.Parse(template);
             var reprinted = parsed.ToString();
         }
