@@ -32,5 +32,6 @@ output "environment" {
     }
     vpc_settings2 = [for k, v in var.map : length(k) + length(v)]
     vpc_settings3 = {for s in var.list : substr(s, 0, 1) => s... if s != ""}
+    vpc_settings4 = [for o in var.list : o.interfaces[0].name]
   }
 }

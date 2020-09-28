@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 using Sprache;
 
@@ -65,22 +66,27 @@ namespace Octopus.CoreParsers.Hcl
         /// <summary>
         /// Special interpolation char
         /// </summary>
-        public static readonly Parser<char> DelimiterStartCurly = Parse.Char('{').Named("Delimiter");
+        public static readonly Parser<char> DelimiterStartCurly = Parse.Char('{').Named("StartCurly");
 
         /// <summary>
         /// Special interpolation char
         /// </summary>
-        public static readonly Parser<char> DelimiterEndCurly = Parse.Char('}').Named("Delimiter");
+        public static readonly Parser<char> DelimiterEndCurly = Parse.Char('}').Named("EndCurly");
 
         /// <summary>
         /// Special interpolation char
         /// </summary>
-        public static readonly Parser<char> DelimiterStartSquare = Parse.Char('[').Named("Delimiter");
+        public static readonly Parser<char> DelimiterStartSquare = Parse.Char('[').Named("StartSquare");
 
         /// <summary>
         /// Special interpolation char
         /// </summary>
-        public static readonly Parser<char> DelimiterEndSquare = Parse.Char(']').Named("Delimiter");
+        public static readonly Parser<char> DelimiterEndSquare = Parse.Char(']').Named("EndSquare");
+
+        /// <summary>
+        /// The index used to access an item in the list
+        /// </summary>
+        public static readonly Parser<string> ListIndex = Parse.Regex(@"\[[0-9*]+\]").Named("ListIndex");
 
         /// <summary>
         /// Escaped quote
@@ -216,20 +222,28 @@ namespace Octopus.CoreParsers.Hcl
         /// Matches a for loop
         /// </summary>
         public static readonly Parser<HclForLoopElement> ForLoopListValue =
-            from curly in DelimiterStartSquare.Token()
+            from startBracket in DelimiterStartSquare.Token()
             from forIdentifier in Parse.String("for").WithWhiteSpace()
             from forVar in Parse.AnyChar.Except(Parse.String(" in ")).Many().Text()
             from inIdentifier in Parse.String("in").WithWhiteSpace()
             from inValue in Parse.AnyChar.Except(Parse.Char(':')).Many().Text()
             from colonIdentifier in Parse.Char(':').Token()
-            from statements in Parse.AnyChar
+            from statements in ((Parse.AnyChar
                 .Except(Parse.Regex(StartOfIfStatement))
                 .Except(DelimiterEndSquare)
+                .Except(DelimiterStartSquare)
+                .Many().Text())
+                .Or(ListIndex))
                 .Many()
-                .Text()
             from ifStatement in IfStatement.Optional()
-            from endCurly in DelimiterEndSquare.Token()
-            select new HclForLoopElement(curly, endCurly, forVar.Trim(), inValue.Trim(), statements.Trim(), ifStatement.GetOrDefault()?.Trim() ?? string.Empty);
+            from endBracket in DelimiterEndSquare.Token()
+            select new HclForLoopElement(
+                startBracket,
+                endBracket,
+                forVar.Trim(),
+                inValue.Trim(),
+                string.Join(string.Empty, statements.ToArray()).Trim(),
+                ifStatement.GetOrDefault()?.Trim() ?? string.Empty);
 
         /// <summary>
         /// Matches the plain text in a string, or the Interpolation block
