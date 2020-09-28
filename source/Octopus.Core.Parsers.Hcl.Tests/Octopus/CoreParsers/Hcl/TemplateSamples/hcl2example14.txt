@@ -1,0 +1,5 @@
+﻿attr {
+  name     = "document_root"
+  type     = string
+  required = true
+}

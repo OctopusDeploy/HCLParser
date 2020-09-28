@@ -39,6 +39,9 @@
     <None Update="Octopus\CoreParsers\Hcl\TemplateSamples\hcl2example4.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Octopus\CoreParsers\Hcl\TemplateSamples\hcl2objectproperty2.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Octopus\CoreParsers\Hcl\TemplateSamples\hcl2example5.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -48,9 +51,6 @@
     <None Update="Octopus\CoreParsers\Hcl\TemplateSamples\hcl2example7.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Octopus\CoreParsers\Hcl\TemplateSamples\hcl2objectproperty2.txt">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
     <None Update="Octopus\CoreParsers\Hcl\TemplateSamples\hcl2example8.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -58,6 +58,24 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Octopus\CoreParsers\Hcl\TemplateSamples\hcl2example10.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\TemplateSamples\hcl2example11.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\TemplateSamples\hcl2example12.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\TemplateSamples\hcl2example13.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\TemplateSamples\hcl2example14.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\TemplateSamples\hcl2example15.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\TemplateSamples\hcl2example16.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>

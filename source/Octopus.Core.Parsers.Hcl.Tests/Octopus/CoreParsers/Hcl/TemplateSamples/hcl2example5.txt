@@ -1,6 +1,10 @@
-﻿locals {
-  public_instances_by_az = {
-    for i in aws_instance.example : i.availability_zone => i...
-    if i.associate_public_ip_address
-  }
+﻿function "upper" {
+  params = [str]
+  result = upper(str)
+}
+
+function "min" {
+  params         = []
+  variadic_param = nums
+  result         = min(nums...)
 }

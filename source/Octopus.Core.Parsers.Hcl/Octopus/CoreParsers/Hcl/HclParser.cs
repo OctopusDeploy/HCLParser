@@ -202,6 +202,18 @@ namespace Octopus.CoreParsers.Hcl
 
 
         /// <summary>
+        /// Matches function parameter. New in 0.12.
+        /// </summary>
+        public static readonly Parser<string> FunctionParameterUnquotedContent =
+            from openBracket in Parse.Char('[')
+            from content in Parse.AnyChar
+                .Except(Parse.Char(LineBreak))
+                .Except(Parse.Char(']'))
+                .Many().Text()
+            from closeBracket in Parse.Char(']')
+            select openBracket + content + closeBracket;
+
+        /// <summary>
         /// Matches the plain text in a string, or the Interpolation block
         /// </summary>
         public static readonly Parser<string> IfStatement =
@@ -401,6 +413,8 @@ namespace Octopus.CoreParsers.Hcl
                     .Or(Parse.String("\"number\""))
                     .Or(Parse.String("bool"))
                     .Or(Parse.String("\"bool\""))
+                    .Or(Parse.String("any"))
+                    .Or(Parse.String("\"any\""))
                     .Text()
                 select new HclPrimitiveTypeElement {Value = value}).Token();
 
@@ -601,6 +615,24 @@ namespace Octopus.CoreParsers.Hcl
             select new HclStringPropertyElement {Name = name, Value = value, NameQuoted = true};
 
         /// <summary>
+        /// Represents a function property. New in 0.12
+        /// </summary>
+        public static readonly Parser<HclElement> HclFunctionElementProperty =
+            from name in Identifier
+            from eql in Equal
+            from value in FunctionParameterUnquotedContent
+            select new HclStringPropertyElement {Name = name, Value = value, NameQuoted = false};
+
+        /// <summary>
+        /// Represents a quoted function property. New in 0.12
+        /// </summary>
+        public static readonly Parser<HclElement> QuotedHclFunctionElementProperty =
+            from name in StringLiteralQuote
+            from eql in Equal
+            from value in FunctionParameterUnquotedContent
+            select new HclStringPropertyElement {Name = name, Value = value, NameQuoted = true};
+
+        /// <summary>
         /// Represents a multiline string
         /// </summary>
         public static readonly Parser<HclElement> HclElementMultilineProperty =
@@ -700,6 +732,26 @@ namespace Octopus.CoreParsers.Hcl
             select new HclTypePropertyElement {Name = name, Children = value.ToEnumerable(), NameQuoted = false}).Token();
 
         /// <summary>
+        /// Represents a function. New in 0.12. e.g.:
+        /// function "upper" {
+        ///     params = [str]
+        ///     result = upper(str)
+        /// }
+        /// </summary>
+        public static readonly Parser<HclElement> HclFunctionElement =
+            from name in Parse.String("function").Text()
+            from value in Identifier.Or(StringLiteralQuote)
+            from lbracket in LeftCurly
+            from properties in HclElementProperty
+                .Or(QuotedHclElementProperty)
+                .Or(HclFunctionElementProperty)
+                .Or(QuotedHclFunctionElementProperty)
+                .Many()
+                .Optional()
+            from rbracket in RightCurly
+            select new HclElement {Name = name, Value = value, Children = properties.GetOrDefault()};
+
+        /// <summary>
         /// Represents a named element with child properties
         /// </summary>
         public static readonly Parser<HclElement> HclNameElement =
@@ -743,6 +795,7 @@ namespace Octopus.CoreParsers.Hcl
             (from value in HclNameElement
                     .Or(HclElementTypedObjectProperty)
                     .Or(ForLoopObjectValue)
+                    .Or(HclFunctionElement)
                     .Or(HclNameValueElement)
                     .Or(HclNameValueTypeElement)
                     .Or(HclElementProperty)

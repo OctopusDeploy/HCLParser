@@ -1,0 +1,12 @@
+﻿block {
+  block_type = "logging"
+
+  object {
+    attr "level" {
+      type = string
+    }
+    attr "file" {
+      type = string
+    }
+  }
+}
