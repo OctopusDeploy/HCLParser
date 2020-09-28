@@ -27,62 +27,174 @@
     <None Update="Octopus\CoreParsers\Hcl\TemplateSamples\*">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Octopus\CoreParsers\Hcl\TemplateSamples\hcl2forloop2.txt">
+    <None Update="Octopus\CoreParsers\Hcl\HCL2TemplateSamples\hcl2example1.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Octopus\CoreParsers\Hcl\TemplateSamples\hcl2forloop3.txt">
+    <None Update="Octopus\CoreParsers\Hcl\HCL2TemplateSamples\hcl2example10.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Octopus\CoreParsers\Hcl\TemplateSamples\hcl2example3.txt">
+    <None Update="Octopus\CoreParsers\Hcl\HCL2TemplateSamples\hcl2example11.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Octopus\CoreParsers\Hcl\TemplateSamples\hcl2example4.txt">
+    <None Update="Octopus\CoreParsers\Hcl\HCL2TemplateSamples\hcl2example12.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Octopus\CoreParsers\Hcl\TemplateSamples\hcl2objectproperty2.txt">
+    <None Update="Octopus\CoreParsers\Hcl\HCL2TemplateSamples\hcl2example13.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Octopus\CoreParsers\Hcl\TemplateSamples\hcl2example5.txt">
+    <None Update="Octopus\CoreParsers\Hcl\HCL2TemplateSamples\hcl2example14.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Octopus\CoreParsers\Hcl\TemplateSamples\hcl2example6.txt">
+    <None Update="Octopus\CoreParsers\Hcl\HCL2TemplateSamples\hcl2example15.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Octopus\CoreParsers\Hcl\TemplateSamples\hcl2example7.txt">
+    <None Update="Octopus\CoreParsers\Hcl\HCL2TemplateSamples\hcl2example16.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Octopus\CoreParsers\Hcl\TemplateSamples\hcl2example8.txt">
+    <None Update="Octopus\CoreParsers\Hcl\HCL2TemplateSamples\hcl2example17.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Octopus\CoreParsers\Hcl\TemplateSamples\hcl2example9.txt">
+    <None Update="Octopus\CoreParsers\Hcl\HCL2TemplateSamples\hcl2example18.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Octopus\CoreParsers\Hcl\TemplateSamples\hcl2example10.txt">
+    <None Update="Octopus\CoreParsers\Hcl\HCL2TemplateSamples\hcl2example2.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Octopus\CoreParsers\Hcl\TemplateSamples\hcl2example11.txt">
+    <None Update="Octopus\CoreParsers\Hcl\HCL2TemplateSamples\hcl2example3.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Octopus\CoreParsers\Hcl\TemplateSamples\hcl2example12.txt">
+    <None Update="Octopus\CoreParsers\Hcl\HCL2TemplateSamples\hcl2example4.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Octopus\CoreParsers\Hcl\TemplateSamples\hcl2example13.txt">
+    <None Update="Octopus\CoreParsers\Hcl\HCL2TemplateSamples\hcl2example5.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Octopus\CoreParsers\Hcl\TemplateSamples\hcl2example14.txt">
+    <None Update="Octopus\CoreParsers\Hcl\HCL2TemplateSamples\hcl2example6.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Octopus\CoreParsers\Hcl\TemplateSamples\hcl2example15.txt">
+    <None Update="Octopus\CoreParsers\Hcl\HCL2TemplateSamples\hcl2example7.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Octopus\CoreParsers\Hcl\TemplateSamples\hcl2example16.txt">
+    <None Update="Octopus\CoreParsers\Hcl\HCL2TemplateSamples\hcl2example8.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\HCL2TemplateSamples\hcl2example9.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\HCL2TemplateSamples\hcl2examplefromdocs.tf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\HCL2TemplateSamples\hcl2forloop.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\HCL2TemplateSamples\hcl2forloop2.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\HCL2TemplateSamples\hcl2forloop3.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\HCL2TemplateSamples\hcl2objectproperty.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\HCL2TemplateSamples\hcl2objectproperty2.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\corpus\attr.hcl">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\corpus\attr-expr.hcl">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\corpus\attr-literal.hcl">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\corpus\block-attrs.hcl">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\corpus\block-comment.hcl">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\corpus\block-empty.hcl">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\corpus\block-nested.hcl">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\corpus\complex.hcl">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\corpus\empty.hcl">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\corpus\escape-dollar.hcl">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\corpus\escape-newline.hcl">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\corpus\function-call.hcl">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\corpus\hash-comment.hcl">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\corpus\index.hcl">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\corpus\int.hcl">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\corpus\int-tmpl.hcl">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\corpus\just-interp.hcl">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\corpus\literal.hcl">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\corpus\lots-of-comments.hcl">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\corpus\slash-comment.hcl">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\corpus\splat-attr.hcl">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\corpus\splat-dot-full.hcl">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\corpus\splat-full.hcl">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\corpus\traversal-dot-index.hcl">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\corpus\traversal-dot-index-terminal.hcl">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\corpus\traversal-index.hcl">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\corpus\utf8.hcl">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\corpus\var.hcl">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="Octopus\CoreParsers\Hcl\TemplateSamples\hcl2ifstatement2.txt" />
-    <Content Include="Octopus\CoreParsers\Hcl\TemplateSamples\hcl2ifstatement3.txt" />
+    <Content Include="Octopus\CoreParsers\Hcl\HCL2TemplateSamples\hcl2ifstatement.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Octopus\CoreParsers\Hcl\HCL2TemplateSamples\hcl2ifstatement2.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Octopus\CoreParsers\Hcl\HCL2TemplateSamples\hcl2ifstatement3.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
 </Project>
