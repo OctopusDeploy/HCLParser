@@ -25,7 +25,7 @@ namespace Octopus.CoreParsers.Hcl
             parsed.Children.First().Children.First(prop => "description" == prop.Name).Value.Should().Match("The AWS region to create things in.");
             parsed.Children.First().Children.First(prop => "default" == prop.Name).Value.Should().Match("us-east-1");
         }
-        
+
         [Test]
         public void ParseHCL2()
         {
@@ -34,9 +34,9 @@ namespace Octopus.CoreParsers.Hcl
             parsed.Children.Should().HaveCount(6);
             parsed.Children.First().Value.Should().Match("prod_access_key");
             parsed.Children.First().Name.Should().Match("variable");
-            parsed.Children.First().Children.Should().HaveCount(0);            
+            parsed.Children.First().Children.Should().HaveCount(0);
         }
-        
+
         [Test]
         public void ParseHCL3()
         {
@@ -52,7 +52,7 @@ namespace Octopus.CoreParsers.Hcl
             "connect.\n"+
             "Example: ~/.ssh/terraform.pub\n");
         }
-        
+
         [Test]
         public void ParseHCL4()
         {
@@ -68,7 +68,7 @@ namespace Octopus.CoreParsers.Hcl
                 "connect.\n"+
                 "Example: ~/.ssh/terraform.pub\n");
         }
-        
+
         [Test]
         public void StringWithoutInterpolationParsing()
         {
@@ -76,22 +76,22 @@ namespace Octopus.CoreParsers.Hcl
             var parsed = HclParser.StringLiteralQuote.Parse(template);
             parsed.Should().Match("${element(var.remote_port[\"${element(keys(var.remote_port), count.index)}\"], 1)}");
         }
-        
+
         [Test]
         public void NestedInterpolation()
         {
             var template = TerraformLoadTemplate("nested_interpolation.tf");
             var parsed = HclParser.HclTemplate.Parse(template);
         }
-        
+
         [Test]
         public void Example1()
         {
             var template = TerraformLoadTemplate("example1.tf");
             var parsed = HclParser.HclTemplate.Parse(template);
             parsed.Children.Where(obj => "variable" == obj.Name).ToList().Should().HaveCount(15);
-        }               
-        
+        }
+
         [Test]
         public void Example15()
         {
@@ -100,21 +100,21 @@ namespace Octopus.CoreParsers.Hcl
             // This is an example of some nested interpolation
             parsed.Children.First().Children.Any(obj => obj.Name == "backend_port" && obj.Value == "${element(var.remote_port[\"${element(keys(var.remote_port), count.index)}\"], 1)}").Should().BeTrue();
         }
-        
+
         [Test]
         public void Example29()
         {
             var template = TerraformLoadTemplate("example29.tf");
             var parsed = HclParser.HclTemplate.Parse(template);
-        }  
-        
+        }
+
         [Test]
         public void Example30()
         {
             var template = TerraformLoadTemplate("example30.tf");
             var parsed = HclParser.HclTemplate.Parse(template);
         }
-        
+
         [Test]
         public void Example31()
         {
@@ -122,8 +122,9 @@ namespace Octopus.CoreParsers.Hcl
             var parsed = HclParser.HclTemplate.Parse(template);
             parsed.Children.Should().HaveCount(3);
         }
-        
+
         [Test]
+        [Ignore("This may be valid now in 0.12")]
         public void Example85()
         {
             try
@@ -137,7 +138,7 @@ namespace Octopus.CoreParsers.Hcl
                 // all good
             }
         }
-        
+
         /// <summary>
         /// 100 random examples of terraform templates from GitHub.
         /// </summary>
@@ -245,8 +246,8 @@ namespace Octopus.CoreParsers.Hcl
             var reprinted2 = reparsed.ToString();
             reprinted.Should().Match(reprinted2);
             parsed.Should().BeEquivalentTo(reparsed);
-        }     
-        
+        }
+
         [TestCase("example39.tf")]
         public void OneFileExample(string file)
         {
@@ -257,24 +258,24 @@ namespace Octopus.CoreParsers.Hcl
             var reprinted2 = reparsed.ToString();
             reprinted.Should().Match(reprinted2);
             parsed.Should().BeEquivalentTo(reparsed);
-        }         
-        
+        }
+
         [Test]
         public void QuotedText()
         {
             var template = TerraformLoadTemplate("quotedtext.txt");
             var parsed = HclParser.HclElementProperty.Parse(template);
             parsed.Value.Should().Match("\"altitude-nyc-abcd-2017-stage.storage.googleapis.com\"");
-        }         
-        
+        }
+
         [Test]
         public void UnquotingText()
         {
             var template = TerraformLoadTemplate("quotedtext_raw.txt");
             var parsed = HclParser.StringLiteralQuoteContentReverse.Parse(template);
             parsed.Should().Match("\\\"altitude-nyc-abcd-2017-stage.storage.googleapis.com\\\"");
-        } 
-        
+        }
+
         [Test]
         public void CommentsAndNameElement()
         {
@@ -284,8 +285,8 @@ namespace Octopus.CoreParsers.Hcl
             var reparsed = HclParser.HclTemplate.Parse(reprinted);
             var reprinted2 = reparsed.ToString();
             reprinted.Should().Match(reprinted2);
-        }  
-        
+        }
+
         [Test]
         public void EndingComments()
         {
@@ -295,8 +296,8 @@ namespace Octopus.CoreParsers.Hcl
             var reparsed = HclParser.HclTemplate.Parse(reprinted);
             var reprinted2 = reparsed.ToString();
             reprinted.Should().Match(reprinted2);
-        }  
-        
+        }
+
         [Test]
         public void ParseCommentSingleLine()
         {
@@ -305,7 +306,7 @@ namespace Octopus.CoreParsers.Hcl
             parsed.Should().HaveCount(2);
             parsed.All(obj => obj.Value.StartsWith("Hello World")).Should().BeTrue();
         }
-        
+
         [Test]
         public void ParseComment()
         {
@@ -313,7 +314,7 @@ namespace Octopus.CoreParsers.Hcl
             var parsed = HclParser.MultilineComment.Parse(template);
             parsed.Value.Should().Match("\nHello\nWorld\n");
         }
-        
+
         [Test]
         public void ParseHereDoc()
         {
@@ -321,15 +322,15 @@ namespace Octopus.CoreParsers.Hcl
             var parsed = HclParser.HereDoc.Parse(template);
             parsed.Item3.Should().Match("\nHello\nWorld\n");
         }
-        
+
         [Test]
         public void ParseMap()
         {
             var template = TerraformLoadTemplate("map.tf");
             var parsed = HclParser.HclNameValueElement.Parse(template);
             parsed.Name.Should().Match("variable");
-        }  
-        
+        }
+
         [Test]
         public void ParseMapColon()
         {
@@ -344,8 +345,8 @@ namespace Octopus.CoreParsers.Hcl
             {
                 //all good
             }
-        }  
-        
+        }
+
         [Test]
         public void ParseListWithBool()
         {
@@ -353,7 +354,7 @@ namespace Octopus.CoreParsers.Hcl
             var parsed = HclParser.HclElementListProperty.Parse(template);
             parsed.Name.Should().Match("bool");
         }
-        
+
         [Test]
         public void ParseMapWithListWithBool()
         {
@@ -361,47 +362,47 @@ namespace Octopus.CoreParsers.Hcl
             var parsed = HclParser.HclElementMapProperty.Parse(template);
             parsed.Name.Should().Match("permissions");
         }
-        
+
         [Test]
         public void ParseEmptyResource()
         {
             var template = TerraformLoadTemplate("emptyresource.tf");
             var parsed = HclParser.HclNameValueTypeElement.Parse(template);
             parsed.Name.Should().Match("resource");
-        }  
-        
+        }
+
         [Test]
         public void ParseResourceWithChildren()
         {
             var template = TerraformLoadTemplate("resourcewithchildren.tf");
             var parsed = HclParser.HclNameValueTypeElement.Parse(template);
             parsed.Name.Should().Match("resource");
-        } 
-        
+        }
+
         [Test]
         public void ParseResource()
         {
             var template = TerraformLoadTemplate("resource.tf");
             var parsed = HclParser.HclNameValueTypeElement.Parse(template);
             parsed.Name.Should().Match("resource");
-        }       
-        
+        }
+
         [Test]
         public void StringInterpolationRaw()
         {
             var template = TerraformLoadTemplate("interpolation.txt");
             var parsed = HclParser.StringLiteralCurly.Parse(template);
             parsed.Should().Match("${\"there\"}");
-        } 
-        
+        }
+
         [Test]
         public void StringInterpolation()
         {
             var template = TerraformLoadTemplate("curlytexttest.txt");
             var parsed = HclParser.StringLiteralQuote.Parse(template);
             parsed.Should().Match("Hi ${\"there\"}");
-        } 
-        
+        }
+
         [Test]
         public void Basic()
         {
@@ -412,8 +413,8 @@ namespace Octopus.CoreParsers.Hcl
             parsed.First(element => "foo" == element.Name).Value.Should().Match("bar");
             parsed.FirstOrDefault(element => "bar" == element.Name).Should().NotBeNull();
             parsed.First(element => "bar" == element.Name).Value.Should().Match("${file(\"bing/bong.txt\")}");
-        } 
-        
+        }
+
         [Test]
         public void BasicIntString()
         {
@@ -422,8 +423,8 @@ namespace Octopus.CoreParsers.Hcl
             parsed.Should().HaveCount(1);
             parsed.FirstOrDefault(element => "count" == element.Name).Should().NotBeNull();
             parsed.First(element => "count" == element.Name).Value.Should().Match("3");
-        } 
-        
+        }
+
         [Test]
         public void BasicSquish()
         {
@@ -435,7 +436,7 @@ namespace Octopus.CoreParsers.Hcl
             parsed.FirstOrDefault(element => "bar" == element.Name).Should().NotBeNull();
             parsed.First(element => "bar" == element.Name).Value.Should().Match("${file(\"bing/bong.txt\")}");
             parsed.FirstOrDefault(element => "foo-bar" == element.Name).Should().NotBeNull();
-            parsed.First(element => "foo-bar" == element.Name).Value.Should().Match("baz");            
+            parsed.First(element => "foo-bar" == element.Name).Value.Should().Match("baz");
         }
 
         [Test]
@@ -447,7 +448,7 @@ namespace Octopus.CoreParsers.Hcl
             parsed.Children.First().Name.Should().Match("environment");
             parsed.Children.First().Value.Should().Match("aws");
         }
-        
+
         [Test]
         public void DecodePolicy()
         {
@@ -458,17 +459,17 @@ namespace Octopus.CoreParsers.Hcl
             parsed.Children.First(obj => "key" == obj.Name && "" == obj.Value).Children.Should().HaveCount(1);
             parsed.Children.First(obj => "key" == obj.Name && "" == obj.Value).Children.First().Name.Should().Match("policy");
             parsed.Children.First(obj => "key" == obj.Name && "" == obj.Value).Children.First().Value.Should().Match("read");
-            
+
             parsed.Children.FirstOrDefault(obj => "key" == obj.Name && "foo/" == obj.Value).Should().NotBeNull();
             parsed.Children.First(obj => "key" == obj.Name && "foo/" == obj.Value).Children.Should().HaveCount(1);
             parsed.Children.First(obj => "key" == obj.Name && "foo/" == obj.Value).Children.First().Name.Should().Match("policy");
             parsed.Children.First(obj => "key" == obj.Name && "foo/" == obj.Value).Children.First().Value.Should().Match("write");
-            
+
             parsed.Children.FirstOrDefault(obj => "key" == obj.Name && "foo/bar/" == obj.Value).Should().NotBeNull();
             parsed.Children.First(obj => "key" == obj.Name && "foo/bar/" == obj.Value).Children.Should().HaveCount(1);
             parsed.Children.First(obj => "key" == obj.Name && "foo/bar/" == obj.Value).Children.First().Name.Should().Match("policy");
             parsed.Children.First(obj => "key" == obj.Name && "foo/bar/" == obj.Value).Children.First().Value.Should().Match("read");
-            
+
             parsed.Children.FirstOrDefault(obj => "key" == obj.Name && "foo/bar/baz" == obj.Value).Should().NotBeNull();
             parsed.Children.First(obj => "key" == obj.Name && "foo/bar/baz" == obj.Value).Children.Should().HaveCount(1);
             parsed.Children.First(obj => "key" == obj.Name && "foo/bar/baz" == obj.Value).Children.First().Name.Should().Match("policy");
@@ -485,7 +486,7 @@ namespace Octopus.CoreParsers.Hcl
             parsed.Children.First(obj => obj.Name == "variable" && obj.Value == "foo").Children.Should().HaveCount(2);
             parsed.Children.First(obj => obj.Name == "variable" && obj.Value == "foo").Children.FirstOrDefault(obj => obj.Name == "default" && obj.Value == "bar").Should().NotBeNull();
             parsed.Children.First(obj => obj.Name == "variable" && obj.Value == "foo").Children.FirstOrDefault(obj => obj.Name == "description" && obj.Value == "bar").Should().NotBeNull();
-            
+
             parsed.Children.First(obj => obj.Name == "variable" && obj.Value == "amis").Children.Should().HaveCount(1);
             parsed.Children.First(obj => obj.Name == "variable" && obj.Value == "amis").Children.FirstOrDefault(obj => obj.Name == "default").Should().NotBeNull();
             parsed.Children.First(obj => obj.Name == "variable" && obj.Value == "amis").Children.First(obj => obj.Name == "default").Children.Should().HaveCount(1);
@@ -503,7 +504,7 @@ namespace Octopus.CoreParsers.Hcl
             parsed.Children.First().Value.Should().Match("foo");
             parsed.Children.First().Children.Should().BeEmpty();
         }
-        
+
         [Test]
         public void Escape()
         {
@@ -517,7 +518,7 @@ namespace Octopus.CoreParsers.Hcl
             parsed.FirstOrDefault(obj => obj.Name == "nested" && obj.Value == "${HH\\\\:mm\\\\:ss}").Should().NotBeNull();
             parsed.FirstOrDefault(obj => obj.Name == "nestedquotes" && obj.Value == "${\"\\\"stringwrappedinquotes\\\"\"}").Should().NotBeNull();
         }
-        
+
         [Test]
         public void EscapeBackslash()
         {
@@ -529,7 +530,7 @@ namespace Octopus.CoreParsers.Hcl
             parsed.Children.First(obj => obj.Name == "output").Children.FirstOrDefault(obj => obj.Name == "two" && obj.Value == @"${replace(var.sub_domain, ""."", ""\\\\."")}").Should().NotBeNull();
             parsed.Children.First(obj => obj.Name == "output").Children.FirstOrDefault(obj => obj.Name == "many" && obj.Value == @"${replace(var.sub_domain, ""."", ""\\\\\\\\."")}").Should().NotBeNull();
         }
-        
+
         [Test]
         public void Flat()
         {
@@ -539,7 +540,7 @@ namespace Octopus.CoreParsers.Hcl
             parsed.FirstOrDefault(obj => obj.Name == "foo" && obj.Value == "bar").Should().NotBeNull();
             parsed.FirstOrDefault(obj => obj.Name == "Key" && obj.Value == "7").Should().NotBeNull();
         }
-        
+
         [Test]
         public void Float()
         {
@@ -549,7 +550,7 @@ namespace Octopus.CoreParsers.Hcl
             parsed.Children.FirstOrDefault(obj => obj.Name == "a" && obj.Value == "1.02").Should().NotBeNull();
             parsed.Children.FirstOrDefault(obj => obj.Name == "b" && obj.Value == "2").Should().NotBeNull();
         }
-        
+
         [Test]
         public void ListOfLists()
         {
@@ -559,7 +560,7 @@ namespace Octopus.CoreParsers.Hcl
             parsed.Children.Count(child => child.Children.All(grandchild => grandchild.Value == "foo")).Should().Be(1);
             parsed.Children.Count(child => child.Children.All(grandchild => grandchild.Value == "bar")).Should().Be(1);
         }
-        
+
         [Test]
         public void ListOfMaps()
         {
@@ -570,7 +571,7 @@ namespace Octopus.CoreParsers.Hcl
             parsed.Children.Count(child => child.Children.Any(grandchild => grandchild.Value == "someval2")).Should().Be(1);
             parsed.Children.Count(child => child.Children.Any(grandchild => grandchild.Value == "someextraval")).Should().Be(1);
         }
-        
+
         [Test]
         public void Multiline()
         {
@@ -578,7 +579,7 @@ namespace Octopus.CoreParsers.Hcl
             var parsed = HclParser.HclElementMultilineProperty.Parse(template);
             parsed.Value.Should().Match("\nbar\nbaz\n");
         }
-        
+
         [Test]
         public void MultilineIndented()
         {
@@ -586,7 +587,7 @@ namespace Octopus.CoreParsers.Hcl
             var parsed = HclParser.HclElementMultilineProperty.Parse(template);
             parsed.Value.Should().Match("\n        bar\n        baz\n      ");
         }
-        
+
         [Test]
         public void MultilineLiteral()
         {
@@ -596,7 +597,7 @@ namespace Octopus.CoreParsers.Hcl
             parsed.First().Name.Should().Match("multiline_literal");
             parsed.First().Value.Should().Match("hello\n  world");
         }
-        
+
         [Test]
         public void MultilineLiteralHil()
         {
@@ -606,7 +607,7 @@ namespace Octopus.CoreParsers.Hcl
             parsed.First().Name.Should().Match("multiline_literal_with_hil");
             parsed.First().Value.Should().Match("${hello\n  world}");
         }
-        
+
         [Test]
         public void MultilineNoEOF()
         {
@@ -616,7 +617,7 @@ namespace Octopus.CoreParsers.Hcl
             parsed.FirstOrDefault(obj => obj.Name == "foo" && obj.Value == "\nbar\nbaz\n").Should().NotBeNull();
             parsed.FirstOrDefault(obj => obj.Name == "key" && obj.Value == "value").Should().NotBeNull();
         }
-        
+
         [Test]
         public void MultilineNoHangingIndent()
         {
@@ -625,7 +626,7 @@ namespace Octopus.CoreParsers.Hcl
             parsed.Should().HaveCount(1);
             parsed.FirstOrDefault(obj => obj.Name == "foo" && obj.Value == "\n  baz\n    bar\n      foo\n      ").Should().NotBeNull();
         }
-        
+
         [Test]
         public void NestedBlockComment()
         {
@@ -635,21 +636,21 @@ namespace Octopus.CoreParsers.Hcl
             parsed.FirstOrDefault(obj => obj.Type == HclElement.CommentType && obj.Value == "\nfoo = \"bar/*\"\n").Should().NotBeNull();
             parsed.FirstOrDefault(obj => obj.Name == "bar" && obj.Value == "value").Should().NotBeNull();
         }
-        
+
         [Test]
         public void ObjectWithBool()
         {
             var template = TerraformLoadTemplate("object_with_bool.hcl");
             var parsed = HclParser.HclNameElement.Parse(template);
             parsed.Name.Should().Match("path");
-            parsed.Children.Should().HaveCount(2);            
+            parsed.Children.Should().HaveCount(2);
             parsed.Children.Should().HaveCount(2);
             parsed.Children.FirstOrDefault(obj => obj.Name == "policy" && obj.Value == "write").Should().NotBeNull();
             parsed.Children.FirstOrDefault(obj => obj.Name == "permissions").Should().NotBeNull();
             parsed.Children.First(obj => obj.Name == "permissions").Children.Should().HaveCount(1);
             parsed.Children.First(obj => obj.Name == "permissions").Children.FirstOrDefault(obj => obj.Name == "bool" && obj.Children.First().Value == "false").Should().NotBeNull();
         }
-        
+
         [Test]
         public void Scientific()
         {
@@ -663,7 +664,7 @@ namespace Octopus.CoreParsers.Hcl
             parsed.FirstOrDefault(obj => obj.Name == "e" && obj.Value == "1.2e+10").Should().NotBeNull();
             parsed.FirstOrDefault(obj => obj.Name == "f" && obj.Value == "1.2e10").Should().NotBeNull();
         }
-        
+
         [Test]
         public void SliceExpand()
         {
@@ -704,7 +705,7 @@ namespace Octopus.CoreParsers.Hcl
             parsed.Children.FirstOrDefault(obj => obj.Children.All(child => child.Name == "key" && child.Value == "7")).Should().NotBeNull();
             parsed.Children.FirstOrDefault(obj => obj.Children.All(child => child.Name == "foo" && child.Value == "bar")).Should().NotBeNull();
         }
-        
+
         [Test]
         public void StructureList()
         {
@@ -715,7 +716,7 @@ namespace Octopus.CoreParsers.Hcl
             parsed.Children.FirstOrDefault(obj => obj.Children.All(child => child.Name == "key" && child.Value == "7")).Should().NotBeNull();
             parsed.Children.FirstOrDefault(obj => obj.Children.All(child => child.Name == "key" && child.Value == "12")).Should().NotBeNull();
         }
-        
+
         [Test]
         public void StructureMulti()
         {
@@ -726,7 +727,7 @@ namespace Octopus.CoreParsers.Hcl
             parsed.Children.FirstOrDefault(obj => obj.Children.All(child => child.Name == "key" && child.Value == "7")).Should().NotBeNull();
             parsed.Children.FirstOrDefault(obj => obj.Children.All(child => child.Name == "key" && child.Value == "12")).Should().NotBeNull();
         }
-        
+
         [Test]
         public void Structure2()
         {
@@ -738,7 +739,7 @@ namespace Octopus.CoreParsers.Hcl
             parsed.Children.FirstOrDefault(obj => obj.Children?.All(child => child.Name == "key" && child.Value == "7") ?? false).Should().NotBeNull();
             parsed.Children.FirstOrDefault(obj => obj.Children?.Any(child => child.Name == "foo" && child.Value == "bar") ?? false).Should().NotBeNull();
         }
-        
+
         [Test]
         public void TerraformHeroku()
         {
@@ -750,7 +751,7 @@ namespace Octopus.CoreParsers.Hcl
             parsed.Children.First(obj => obj.Name == "config_vars").Children.Should().HaveCount(1);
             parsed.Children.First(obj => obj.Name == "config_vars").Children.FirstOrDefault(obj => obj.Name == "FOO" && obj.Value == "bar").Should().NotBeNull();
         }
-        
+
         [Test]
         public void TFVars()
         {
@@ -760,9 +761,9 @@ namespace Octopus.CoreParsers.Hcl
             parsed.Children.FirstOrDefault(obj => obj.Name == "regularvar" && obj.Value == "Should work").Should().NotBeNull();
             parsed.Children.FirstOrDefault(obj => obj.Name == "map.key1" && obj.Value == "Value").Should().NotBeNull();
             parsed.Children.FirstOrDefault(obj => obj.Name == "map.key2" && obj.Value == "Other value").Should().NotBeNull();
-            
+
         }
-        
+
         [Test]
         public void EscapedInterpolation()
         {
@@ -770,9 +771,9 @@ namespace Octopus.CoreParsers.Hcl
             var parsed = HclParser.HclTemplate.Parse(template);
             parsed.Children.Should().HaveCount(1);
             parsed.Children.FirstOrDefault(obj => obj.Name == "one" && obj.Value == "$${replace(var.sub_domain, \".\", \"\\.\")}").Should().NotBeNull();
-            
+
         }
-        
+
         [Test]
         public void ArrayComment()
         {
@@ -782,9 +783,9 @@ namespace Octopus.CoreParsers.Hcl
             parsed.Children.First().Children.FirstOrDefault(obj => obj.Value == "1").Should().NotBeNull();
             parsed.Children.First().Children.FirstOrDefault(obj => obj.Value == "2").Should().NotBeNull();
             parsed.Children.First().Children.FirstOrDefault(obj => obj.Type == HclElement.CommentType).Should().NotBeNull();
-            
+
         }
-        
+
         [Test]
         public void AssignColon()
         {
@@ -805,7 +806,7 @@ namespace Octopus.CoreParsers.Hcl
                 //all good
             }
         }
-        
+
         [Test]
         public void AssignDeep()
         {
@@ -813,9 +814,9 @@ namespace Octopus.CoreParsers.Hcl
             var parsed = HclParser.HclTemplate.Parse(template);
             parsed.Children.Should().HaveCount(1);
             parsed.Children.First().Children.First().Children.FirstOrDefault(obj => obj.Name == "foo").Should().NotBeNull();
-            parsed.Children.First().Children.First().Children.First(obj => obj.Name == "foo").Children.First().Children.FirstOrDefault(obj => obj.Name == "bar").Should().NotBeNull();           
+            parsed.Children.First().Children.First().Children.First(obj => obj.Name == "foo").Children.First().Children.FirstOrDefault(obj => obj.Name == "bar").Should().NotBeNull();
         }
-        
+
         [Test]
         public void Comment()
         {
@@ -830,7 +831,7 @@ namespace Octopus.CoreParsers.Hcl
             parsed.Children.FirstOrDefault(obj => obj.Type == HclElement.CommentType && obj.Value == " Multiple").Should().NotBeNull();
             parsed.Children.FirstOrDefault(obj => obj.Type == HclElement.CommentType && obj.Value == " Lines").Should().NotBeNull();
         }
-        
+
         [Test]
         public void CommentCrlf()
         {
@@ -845,7 +846,7 @@ namespace Octopus.CoreParsers.Hcl
             parsed.Children.FirstOrDefault(obj => obj.Type == HclElement.CommentType && obj.Value == " Multiple").Should().NotBeNull();
             parsed.Children.FirstOrDefault(obj => obj.Type == HclElement.CommentType && obj.Value == " Lines").Should().NotBeNull();
         }
-        
+
         [Test]
         public void CommentLastLine()
         {
@@ -854,7 +855,7 @@ namespace Octopus.CoreParsers.Hcl
             parsed.Children.Should().HaveCount(1);
             parsed.Children.FirstOrDefault(obj => obj.Type == HclElement.CommentType && obj.Value == "foo").Should().NotBeNull();
         }
-        
+
         [Test]
         public void CommentSingle()
         {
@@ -863,7 +864,7 @@ namespace Octopus.CoreParsers.Hcl
             parsed.Children.Should().HaveCount(1);
             parsed.Children.FirstOrDefault(obj => obj.Type == HclElement.CommentType && obj.Value == " Hello").Should().NotBeNull();
         }
-        
+
         [Test]
         public void Complex()
         {
@@ -871,21 +872,21 @@ namespace Octopus.CoreParsers.Hcl
             var parsed = HclParser.HclTemplate.Parse(template);
             parsed.Children.Should().HaveCount(8);
             parsed.Children.FirstOrDefault(obj => obj.Name == "variable" && obj.Value == "groups").Should().NotBeNull();
-            
+
             parsed.Children.FirstOrDefault(obj => obj.Name == "provider" && obj.Value == "aws").Should().NotBeNull();
             parsed.Children.First(obj => obj.Name == "provider" && obj.Value == "aws").Children
                 .FirstOrDefault(obj => obj.Name == "access_key" && obj.Value == "foo").Should().NotBeNull();
             parsed.Children.First(obj => obj.Name == "provider" && obj.Value == "aws").Children
                 .FirstOrDefault(obj => obj.Name == "secret_key" && obj.Value == "bar").Should().NotBeNull();
-            
+
             parsed.Children.FirstOrDefault(obj => obj.Name == "provider" && obj.Value == "do").Should().NotBeNull();
             parsed.Children.First(obj => obj.Name == "provider" && obj.Value == "do").Children
                 .FirstOrDefault(obj => obj.Name == "api_key" && obj.Value == "${var.foo}").Should().NotBeNull();
-            
+
             parsed.Children.FirstOrDefault(obj => obj.Name == "resource" && obj.Value == "aws_security_group" && obj.Type == "firewall").Should().NotBeNull();
             parsed.Children.First(obj => obj.Name == "resource" && obj.Value == "aws_security_group" && obj.Type == "firewall").Children
                 .FirstOrDefault(obj => obj.Name == "count" && obj.Value == "5").Should().NotBeNull();
-            
+
             parsed.Children.FirstOrDefault(obj => obj.Name == "resource" && obj.Value == "aws_instance" && obj.Type == "web").Should().NotBeNull();
             parsed.Children.First(obj => obj.Name == "resource" && obj.Value == "aws_instance" && obj.Type == "web").Children
                 .FirstOrDefault(obj => obj.Name == "ami" && obj.Value == "${var.foo}").Should().NotBeNull();
@@ -893,7 +894,7 @@ namespace Octopus.CoreParsers.Hcl
                 .FirstOrDefault(obj => obj.Name == "security_groups").Should().NotBeNull();
             parsed.Children.First(obj => obj.Name == "resource" && obj.Value == "aws_instance" && obj.Type == "web").Children
                 .FirstOrDefault(obj => obj.Name == "network_interface").Should().NotBeNull();
-            
+
             parsed.Children.FirstOrDefault(obj => obj.Name == "resource" && obj.Value == "aws_instance" && obj.Type == "db").Should().NotBeNull();
             parsed.Children.First(obj => obj.Name == "resource" && obj.Value == "aws_instance" && obj.Type == "db").Children
                 .FirstOrDefault(obj => obj.Name == "security_groups" && obj.Value == "${aws_security_group.firewall.*.id}").Should().NotBeNull();
@@ -901,21 +902,21 @@ namespace Octopus.CoreParsers.Hcl
                 .FirstOrDefault(obj => obj.Name == "VPC" && obj.Value == "foo").Should().NotBeNull();
             parsed.Children.First(obj => obj.Name == "resource" && obj.Value == "aws_instance" && obj.Type == "db").Children
                 .FirstOrDefault(obj => obj.Name == "depends_on").Should().NotBeNull();
-            
+
             parsed.Children.FirstOrDefault(obj => obj.Name == "output" && obj.Value == "web_ip").Should().NotBeNull();
             parsed.Children.First(obj => obj.Name == "output" && obj.Value == "web_ip").Children
                 .FirstOrDefault(obj => obj.Name == "value" && obj.Value == "${aws_instance.web.private_ip}").Should().NotBeNull();
         }
-        
+
         [Test]
         public void ComplexUnicode()
         {
             var template = TerraformLoadTemplate("complex_unicode.hcl");
             var parsed = HclParser.HclTemplate.Parse(template);
             parsed.Children.Should().HaveCount(8);
-            parsed.Children.FirstOrDefault(obj => obj.Name == "a۰۱۸" && obj.Value == "foo").Should().NotBeNull();                      
+            parsed.Children.FirstOrDefault(obj => obj.Name == "a۰۱۸" && obj.Value == "foo").Should().NotBeNull();
         }
-                
+
         [Test]
         public void ComplexCrlf()
         {
@@ -923,21 +924,21 @@ namespace Octopus.CoreParsers.Hcl
             var parsed = HclParser.HclTemplate.Parse(template);
             parsed.Children.Should().HaveCount(8);
             parsed.Children.FirstOrDefault(obj => obj.Name == "variable" && obj.Value == "groups").Should().NotBeNull();
-            
+
             parsed.Children.FirstOrDefault(obj => obj.Name == "provider" && obj.Value == "aws").Should().NotBeNull();
             parsed.Children.First(obj => obj.Name == "provider" && obj.Value == "aws").Children
                 .FirstOrDefault(obj => obj.Name == "access_key" && obj.Value == "foo").Should().NotBeNull();
             parsed.Children.First(obj => obj.Name == "provider" && obj.Value == "aws").Children
                 .FirstOrDefault(obj => obj.Name == "secret_key" && obj.Value == "bar").Should().NotBeNull();
-            
+
             parsed.Children.FirstOrDefault(obj => obj.Name == "provider" && obj.Value == "do").Should().NotBeNull();
             parsed.Children.First(obj => obj.Name == "provider" && obj.Value == "do").Children
                 .FirstOrDefault(obj => obj.Name == "api_key" && obj.Value == "${var.foo}").Should().NotBeNull();
-            
+
             parsed.Children.FirstOrDefault(obj => obj.Name == "resource" && obj.Value == "aws_security_group" && obj.Type == "firewall").Should().NotBeNull();
             parsed.Children.First(obj => obj.Name == "resource" && obj.Value == "aws_security_group" && obj.Type == "firewall").Children
                 .FirstOrDefault(obj => obj.Name == "count" && obj.Value == "5").Should().NotBeNull();
-            
+
             parsed.Children.FirstOrDefault(obj => obj.Name == "resource" && obj.Value == "aws_instance" && obj.Type == "web").Should().NotBeNull();
             parsed.Children.First(obj => obj.Name == "resource" && obj.Value == "aws_instance" && obj.Type == "web").Children
                 .FirstOrDefault(obj => obj.Name == "ami" && obj.Value == "${var.foo}").Should().NotBeNull();
@@ -945,7 +946,7 @@ namespace Octopus.CoreParsers.Hcl
                 .FirstOrDefault(obj => obj.Name == "security_groups").Should().NotBeNull();
             parsed.Children.First(obj => obj.Name == "resource" && obj.Value == "aws_instance" && obj.Type == "web").Children
                 .FirstOrDefault(obj => obj.Name == "network_interface").Should().NotBeNull();
-            
+
             parsed.Children.FirstOrDefault(obj => obj.Name == "resource" && obj.Value == "aws_instance" && obj.Type == "db").Should().NotBeNull();
             parsed.Children.First(obj => obj.Name == "resource" && obj.Value == "aws_instance" && obj.Type == "db").Children
                 .FirstOrDefault(obj => obj.Name == "security_groups" && obj.Value == "${aws_security_group.firewall.*.id}").Should().NotBeNull();
@@ -953,7 +954,7 @@ namespace Octopus.CoreParsers.Hcl
                 .FirstOrDefault(obj => obj.Name == "VPC" && obj.Value == "foo").Should().NotBeNull();
             parsed.Children.First(obj => obj.Name == "resource" && obj.Value == "aws_instance" && obj.Type == "db").Children
                 .FirstOrDefault(obj => obj.Name == "depends_on").Should().NotBeNull();
-            
+
             parsed.Children.FirstOrDefault(obj => obj.Name == "output" && obj.Value == "web_ip").Should().NotBeNull();
             parsed.Children.First(obj => obj.Name == "output" && obj.Value == "web_ip").Children
                 .FirstOrDefault(obj => obj.Name == "value" && obj.Value == "${aws_instance.web.private_ip}").Should().NotBeNull();
@@ -967,7 +968,7 @@ namespace Octopus.CoreParsers.Hcl
             parsed.Children.Should().HaveCount(1);
             parsed.Children.FirstOrDefault(obj => obj.Name == "foo.bar" && obj.Value == "baz").Should().NotBeNull();
         }
-        
+
         [Test]
         public void KeyWithoutValue()
         {
@@ -982,7 +983,7 @@ namespace Octopus.CoreParsers.Hcl
                 // all good
             }
         }
-        
+
         [Test]
         public void List()
         {
@@ -994,7 +995,7 @@ namespace Octopus.CoreParsers.Hcl
             parsed.Children.First(obj => obj.Name == "foo").Children.FirstOrDefault(obj => obj.Value == "2").Should().NotBeNull();
             parsed.Children.First(obj => obj.Name == "foo").Children.FirstOrDefault(obj => obj.Value == "foo").Should().NotBeNull();
         }
-        
+
         [Test]
         public void ListComma()
         {
@@ -1006,7 +1007,7 @@ namespace Octopus.CoreParsers.Hcl
             parsed.Children.First(obj => obj.Name == "foo").Children.FirstOrDefault(obj => obj.Value == "2").Should().NotBeNull();
             parsed.Children.First(obj => obj.Name == "foo").Children.FirstOrDefault(obj => obj.Value == "foo").Should().NotBeNull();
         }
-        
+
         [Test]
         public void MissingBraces()
         {
@@ -1021,7 +1022,7 @@ namespace Octopus.CoreParsers.Hcl
                 // all good
             }
         }
-        
+
         [Test]
         public void Multiple()
         {
@@ -1031,7 +1032,7 @@ namespace Octopus.CoreParsers.Hcl
             parsed.Children.FirstOrDefault(obj => obj.Name == "foo" && obj.Value == "bar").Should().NotBeNull();
             parsed.Children.FirstOrDefault(obj => obj.Name == "key" && obj.Value == "7").Should().NotBeNull();
         }
-        
+
         [Test]
         public void ObjectKeyAssignWithoutValue()
         {
@@ -1046,7 +1047,7 @@ namespace Octopus.CoreParsers.Hcl
                 // all good
             }
         }
-        
+
         [Test]
         public void ObjectKeyAssignWithoutValue2()
         {
@@ -1061,7 +1062,7 @@ namespace Octopus.CoreParsers.Hcl
                 // all good
             }
         }
-        
+
         [Test]
         public void ObjectKeyAssignWithoutValue3()
         {
@@ -1076,7 +1077,7 @@ namespace Octopus.CoreParsers.Hcl
                 // all good
             }
         }
-        
+
         [Test]
         public void ObjectKeyWithoutValue()
         {
@@ -1091,7 +1092,7 @@ namespace Octopus.CoreParsers.Hcl
                 // all good
             }
         }
-        
+
         [Test]
         public void ObjectListComma()
         {
@@ -1102,7 +1103,7 @@ namespace Octopus.CoreParsers.Hcl
             parsed.Children.First(obj => obj.Name == "foo").Children.FirstOrDefault(obj => obj.Name == "one" && obj.Value == "1").Should().NotBeNull();
             parsed.Children.First(obj => obj.Name == "foo").Children.FirstOrDefault(obj => obj.Name == "two" && obj.Value == "2").Should().NotBeNull();
         }
-        
+
         [Test]
         public void Old()
         {
@@ -1117,7 +1118,7 @@ namespace Octopus.CoreParsers.Hcl
                 // all good
             }
         }
-        
+
         [Test]
         public void StructureBasic()
         {
@@ -1129,7 +1130,7 @@ namespace Octopus.CoreParsers.Hcl
             parsed.Children.First(obj => obj.Name == "foo").Children.FirstOrDefault(obj => obj.Name == "value" && obj.Value == "8").Should().NotBeNull();
             parsed.Children.First(obj => obj.Name == "foo").Children.FirstOrDefault(obj => obj.Name == "complex::value" && obj.Value == "9").Should().NotBeNull();
         }
-        
+
         [Test]
         public void StructureEmpty()
         {
@@ -1138,7 +1139,7 @@ namespace Octopus.CoreParsers.Hcl
             parsed.Children.Should().HaveCount(1);
             parsed.Children.FirstOrDefault(obj => obj.Name == "resource" && obj.Value == "foo" && obj.Type == "bar").Should().NotBeNull();
         }
-        
+
         [Test]
         public void Types()
         {
@@ -1153,7 +1154,7 @@ namespace Octopus.CoreParsers.Hcl
             parsed.Children.FirstOrDefault(obj => obj.Name == "foo" && obj.Value == "true").Should().NotBeNull();
             parsed.Children.FirstOrDefault(obj => obj.Name == "bar" && obj.Value == "false").Should().NotBeNull();
         }
-        
+
         [Test]
         public void MultilineNoMarker()
         {
@@ -1168,7 +1169,7 @@ namespace Octopus.CoreParsers.Hcl
                 // all good
             }
         }
-        
+
         [Test]
         public void UnterminatedObject()
         {
@@ -1183,7 +1184,7 @@ namespace Octopus.CoreParsers.Hcl
                 // all good
             }
         }
-        
+
         [Test]
         public void UnterminatedObject2()
         {
@@ -1198,7 +1199,7 @@ namespace Octopus.CoreParsers.Hcl
                 // all good
             }
         }
-        
+
         [Test]
         [Ignore("Need to fix this. Leads to a false positive, but that is OK for now, a known issue. The parser works for our needs as long as it never has false negatives, so false positives are ok now. but some of the feedback in the bug bash was to provide better error messages for invalid scripts, which means having a more accurate parser")]
         public void ArrayComment2()
@@ -1214,7 +1215,7 @@ namespace Octopus.CoreParsers.Hcl
                 // all good
             }
         }
-        
+
         [Test]
         public void GitCrypt()
         {
@@ -1229,8 +1230,8 @@ namespace Octopus.CoreParsers.Hcl
                 // all good
             }
         }
-        
-        
+
+
         [Test]
         public void NumberRegex()
         {

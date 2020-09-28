@@ -19,14 +19,19 @@ namespace Octopus.CoreParsers.Hcl
         public const string RootType = "#ROOT";
 
         /// <summary>
+        /// The type defining a for loop
+        /// </summary>
+        public const string ForLoopType = "ForLoop";
+
+        /// <summary>
         /// The type for string, number and boolean elements
         /// </summary>
         public const string StringType = "String";
-        
+
         /// <summary>
         /// The type for multiline string
         /// </summary>
-        public const string HeredocStringType = "HeredocString";            
+        public const string HeredocStringType = "HeredocString";
 
         /// <summary>
         /// The type for list elements
@@ -36,18 +41,18 @@ namespace Octopus.CoreParsers.Hcl
         /// <summary>
         /// The type for map elements
         /// </summary>
-        public const string MapType = "Map";  
-        
+        public const string MapType = "Map";
+
         /// <summary>
         /// The type for string, number and boolean elements
         /// </summary>
         public const string StringPropertyType = "StringProperty";
-        
+
         /// <summary>
         /// The type for string, number and boolean elements
         /// </summary>
         public const string HeredocStringPropertyType = "HeredocStringProperty";
-        
+
         /// <summary>
         /// The type for list elements
         /// </summary>
@@ -56,8 +61,8 @@ namespace Octopus.CoreParsers.Hcl
         /// <summary>
         /// The type for map elements
         /// </summary>
-        public const string MapPropertyType = "MapProperty";  
-        
+        public const string MapPropertyType = "MapProperty";
+
         /// <summary>
         /// The name of the element, #COMMENT for comments, or #ROOT for the
         /// root document element.
@@ -69,7 +74,7 @@ namespace Octopus.CoreParsers.Hcl
         /// True if the name was originally in quotes, and false otherwise
         /// </summary>
         public virtual bool NameQuoted { get; set; } = false;
-        
+
         /// <summary>
         /// Returns the string that is used for the element name. If it was originally
         /// quoted, then it will be quoted here. Otherwise the plain name is returned.
@@ -83,7 +88,7 @@ namespace Octopus.CoreParsers.Hcl
                 }
 
                 return Name;
-            } 
+            }
         }
 
         /// <summary>
@@ -121,15 +126,15 @@ namespace Octopus.CoreParsers.Hcl
         protected string GetIndent(int indent)
         {
             return new String(' ', indent * 2);
-        }        
+        }
 
         public virtual string ToString(bool naked, int indent)
         {
             var indentString = GetIndent(indent);
 
-            return indentString + OriginalName + 
-                ProcessedValue?.Map(a => " \"" + EscapeQuotes(a) + "\"") + 
-                Type?.Map(a => " \"" + EscapeQuotes(a) + "\"") + 
+            return indentString + OriginalName +
+                ProcessedValue?.Map(a => " \"" + EscapeQuotes(a) + "\"") +
+                Type?.Map(a => " \"" + EscapeQuotes(a) + "\"") +
                 " {\n" +
                 string.Join("\n", Children?.Select(child => child.ToString(indent + 1)) ?? Enumerable.Empty<string>()) +
                 "\n" + indentString + "}";
@@ -147,23 +152,23 @@ namespace Octopus.CoreParsers.Hcl
 
         public override bool Equals(object obj)
         {
-            if (!(obj is HclElement)) 
+            if (!(obj is HclElement))
                 return false;
 
             var hclElement = obj as HclElement;
 
             if (hclElement.Name != Name)
                 return false;
-            
+
             if (hclElement.Value != Value)
                 return false;
-            
+
             if (hclElement.Type != Type)
                 return false;
-            
+
             if (hclElement.Children == null && Children != null)
                 return false;
-            
+
             if (hclElement.Children != null && Children == null)
                 return false;
 
@@ -174,7 +179,7 @@ namespace Octopus.CoreParsers.Hcl
 
                 if (myChildren.Length != theirChidlren.Length)
                     return false;
-                
+
                 for (int i = 0; i < myChildren.Length; ++i)
                 {
                     if (!myChildren[i].Equals(theirChidlren[i]))

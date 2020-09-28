@@ -1,0 +1,5 @@
+﻿{
+for s in aws_elastic_beanstalk_environment.example.all_settings :
+s.name => s.value
+if s.namespace == "aws:ec2:vpc"
+}

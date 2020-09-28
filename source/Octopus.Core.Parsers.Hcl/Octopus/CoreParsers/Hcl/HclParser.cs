@@ -7,15 +7,22 @@ namespace Octopus.CoreParsers.Hcl
 {
     /// <summary>
     /// A Sprache parser for the HCL library.
-    /// 
+    ///
     /// The goal of this parser is to have no false negatives. Every valid HCL file should be
     /// parsed by the Parsers in this class.
-    /// 
+    ///
     /// It it very likely that these parsers will parse templates that are not valid HCL. This
     /// is OK though, as the terraform exe will ultimately be the source of truth.
     /// </summary>
     public class HclParser
     {
+        public static readonly Parser<string> Dynamic =
+            Parse.String("dynamic").Text().Named("Dynamic configuration block");
+
+        public static readonly Parser<string> IfToken = Parse.String("if").Text().WithWhiteSpace().Named("If statement");
+
+        public static readonly Regex UpToIf = new Regex(@"^(?=\s*if)");
+
         /// <summary>
         /// The \n char
         /// </summary>
@@ -40,17 +47,20 @@ namespace Octopus.CoreParsers.Hcl
         /// <summary>
         /// An escaped interpolation curly
         /// </summary>
-        public static readonly Parser<string> EscapedDelimiterStartCurly = Parse.String("{{").Text().Named("Escaped delimiter");
+        public static readonly Parser<string> EscapedDelimiterStartCurly =
+            Parse.String("{{").Text().Named("Escaped delimiter");
 
         /// <summary>
         /// An escaped interpolation curly
         /// </summary>
-        public static readonly Parser<string> EscapedDelimiterEndCurly = Parse.String("}}").Text().Named("Escaped delimiter");
+        public static readonly Parser<string> EscapedDelimiterEndCurly =
+            Parse.String("}}").Text().Named("Escaped delimiter");
 
         /// <summary>
         /// The start of an interpolation marker
         /// </summary>
-        public static readonly Parser<string> DelimiterStartInterpolated = Parse.String("${").Text().Named("Start Interpolation");
+        public static readonly Parser<string> DelimiterStartInterpolated =
+            Parse.String("${").Text().Named("Start Interpolation");
 
         /// <summary>
         /// Special interpolation char
@@ -63,19 +73,32 @@ namespace Octopus.CoreParsers.Hcl
         public static readonly Parser<char> DelimiterEndCurly = Parse.Char('}').Named("Delimiter");
 
         /// <summary>
+        /// Special interpolation char
+        /// </summary>
+        public static readonly Parser<char> DelimiterStartSquare = Parse.Char('[').Named("Delimiter");
+
+        /// <summary>
+        /// Special interpolation char
+        /// </summary>
+        public static readonly Parser<char> DelimiterEndSquare = Parse.Char(']').Named("Delimiter");
+
+        /// <summary>
         /// Escaped quote
         /// </summary>
-        public static readonly Parser<string> EscapedDelimiterQuote = Parse.String("\\\"").Text().Named("Escaped delimiter");
+        public static readonly Parser<string> EscapedDelimiterQuote =
+            Parse.String("\\\"").Text().Named("Escaped delimiter");
 
         /// <summary>
         /// Escape char
         /// </summary>
-        public static readonly Parser<string> SingleEscapeQuote = Parse.String("\\").Text().Named("Single escape character");
+        public static readonly Parser<string> SingleEscapeQuote =
+            Parse.String("\\").Text().Named("Single escape character");
 
         /// <summary>
         /// Double escape
         /// </summary>
-        public static readonly Parser<string> DoubleEscapeQuote = Parse.String("\\\\").Text().Named("Escaped escape character");
+        public static readonly Parser<string> DoubleEscapeQuote =
+            Parse.String("\\\\").Text().Named("Escaped escape character");
 
         /// <summary>
         /// Quote char
@@ -90,12 +113,14 @@ namespace Octopus.CoreParsers.Hcl
         /// <summary>
         /// An escaped interpolation start
         /// </summary>
-        public static readonly Parser<string> EscapedDelimiterInterpolation = Parse.Char('$').Repeat(2).Text().Named("Escaped Interpolated");
+        public static readonly Parser<string> EscapedDelimiterInterpolation =
+            Parse.Char('$').Repeat(2).Text().Named("Escaped Interpolated");
 
         /// <summary>
         /// An escaped interpolation start
         /// </summary>
-        public static readonly Parser<string> DoubleEscapedDelimiterInterpolation = Parse.Char('$').Repeat(4).Text().Named("Escaped Interpolated");
+        public static readonly Parser<string> DoubleEscapedDelimiterInterpolation =
+            Parse.Char('$').Repeat(4).Text().Named("Escaped Interpolated");
 
         /// <summary>
         /// A section of a string that does not have any special interpolation tokens
@@ -119,6 +144,9 @@ namespace Octopus.CoreParsers.Hcl
             from end in DelimiterEndCurly
             select string.Concat(start) + string.Concat(v) + string.Concat(end);
 
+        /// <summary>
+        /// Any characters that are not escaped.
+        /// </summary>
         public static readonly Parser<string> SimpleLiteralQuote = Parse.AnyChar
             .Except(SingleEscapeQuote)
             .Except(DelimiterQuote)
@@ -127,7 +155,7 @@ namespace Octopus.CoreParsers.Hcl
             .Many().Text().Named("Literal without escape/delimiter character");
 
         /// <summary>
-        /// Matches the plain text in a string, or the Interpolation block 
+        /// Matches the plain text in a string, or the Interpolation block
         /// </summary>
         public static readonly Parser<string> StringLiteralQuoteContent =
             from curly in StringLiteralCurly.Optional()
@@ -140,19 +168,84 @@ namespace Octopus.CoreParsers.Hcl
             select curly.GetOrDefault() + Regex.Unescape(string.Concat(content));
 
         /// <summary>
-        /// Matches the plain text in a string, or the Interpolation block 
+        /// Matches an unquoted string. New in 0.12
+        /// </summary>
+        public static readonly Parser<string> StringLiteralUnquotedContent =
+            from start in Parse.AnyChar
+                .Except(Parse.Char('"'))
+                .Except(Parse.Char('\''))
+                .Except(Parse.Char('{'))
+                .Except(Parse.Char('['))
+                .Except(Parse.Char('<'))
+                .Except(Parse.Char(LineBreak))
+            from content in Parse.AnyChar
+                .Except(Parse.Char(LineBreak))
+                .Except(Parse.Char('}'))
+                .Many().Text()
+            select start + content;
+
+
+        /// <summary>
+        /// Matches the plain text in a string, or the Interpolation block
+        /// </summary>
+        public static readonly Parser<string> IfStatement =
+            from lineBreak in Parse.Char(LineBreak)
+            from ifIdentifier in IfToken
+            from ifStatement in Parse.AnyChar.Except(DelimiterEndSquare.Or(DelimiterEndCurly)).Many().Text()
+            select lineBreak + ifIdentifier + " " + ifStatement;
+
+        /// <summary>
+        /// Matches a for loop
+        /// </summary>
+        public static readonly Parser<HclForLoopElement> ForLoopObjectValue =
+            from curly in DelimiterStartCurly.Token()
+            from forIdentifier in Parse.String("for").WithWhiteSpace()
+            from forVar in Parse.AnyChar.Except(Parse.String(" in ")).Many().Text()
+            from inIdentifier in Parse.String("in").WithWhiteSpace()
+            from inValue in Parse.AnyChar.Except(Parse.Char(':')).Many().Text()
+            from colonIdentifier in Parse.Char(':').Token()
+            from statements in Parse.AnyChar
+                .Except(Parse.Regex(UpToIf))
+                .Except(DelimiterEndCurly)
+                .Many()
+                .Text()
+            from ifStatement in IfStatement.Optional()
+            from endCurly in DelimiterEndCurly.Token()
+            select new HclForLoopElement(curly, endCurly, forVar.Trim(), inValue.Trim(), statements.Trim(), ifStatement.GetOrDefault().Trim());
+
+        /// <summary>
+        /// Matches a for loop
+        /// </summary>
+        public static readonly Parser<HclForLoopElement> ForLoopListValue =
+            from curly in DelimiterStartSquare.Token()
+            from forIdentifier in Parse.String("for").WithWhiteSpace()
+            from forVar in Parse.AnyChar.Except(Parse.String(" in ")).Many().Text()
+            from inIdentifier in Parse.String("in").WithWhiteSpace()
+            from inValue in Parse.AnyChar.Except(Parse.Char(':')).Many().Text()
+            from colonIdentifier in Parse.Char(':').Token()
+            from statements in Parse.AnyChar
+                .Except(Parse.Regex(UpToIf))
+                .Except(DelimiterEndSquare)
+                .Many()
+                .Text()
+            from ifStatement in IfStatement.Optional()
+            from endCurly in DelimiterEndSquare.Token()
+            select new HclForLoopElement(curly, endCurly, forVar.Trim(), inValue.Trim(), statements.Trim(), ifStatement.GetOrDefault().Trim());
+
+        /// <summary>
+        /// Matches the plain text in a string, or the Interpolation block
         /// </summary>
         public static readonly Parser<string> StringLiteralQuoteContentReverse =
             from combined in (
                 from curly in StringLiteralCurly.Optional()
-                from content in 
+                from content in
                     EscapedDelimiterInterpolation
-                    .Or(Parse.AnyChar.Except(DelimiterStartInterpolated).Many().Text())
+                        .Or(Parse.AnyChar.Except(DelimiterStartInterpolated).Many().Text())
                 select curly.GetOrDefault() + EscapeString(content)).Many()
             select string.Concat(combined);
 
         /// <summary>
-        /// Matches the plain text in a string, or the Interpolation block 
+        /// Matches the plain text in a string, or the Interpolation block
         /// </summary>
         public static readonly Parser<string> StringLiteralQuoteContentNoInterpolation =
             from content in StringLiteralCurly
@@ -168,11 +261,11 @@ namespace Octopus.CoreParsers.Hcl
         /// Matches multiple StringLiteralQuoteContent to make up the string
         /// </summary>
         public static readonly Parser<string> StringLiteralQuote =
-        (from start in DelimiterQuote
-            from content in StringLiteralQuoteContent.Many()
-            from end in DelimiterQuote
-            select string.Concat(content)
-        ).Token();
+            (from start in DelimiterQuote
+                from content in StringLiteralQuoteContent.Many()
+                from end in DelimiterQuote
+                select string.Concat(content)
+            ).Token();
 
         /// <summary>
         /// Represents a multiline comment e.g.
@@ -181,38 +274,38 @@ namespace Octopus.CoreParsers.Hcl
         /// */
         /// </summary>
         public static readonly Parser<HclElement> MultilineComment =
-        (from open in Parse.String("/*")
-            from content in Parse.AnyChar.Except(Parse.String("*/"))
-                .Or(Parse.Char(LineBreak))
-                .Many().Text()
-            from last in Parse.String("*/")
-            select new HclMultiLineCommentElement {Value = content}).Token().Named("Multiline Comment");
+            (from open in Parse.String("/*")
+                from content in Parse.AnyChar.Except(Parse.String("*/"))
+                    .Or(Parse.Char(LineBreak))
+                    .Many().Text()
+                from last in Parse.String("*/")
+                select new HclMultiLineCommentElement {Value = content}).Token().Named("Multiline Comment");
 
         /// <summary><![CDATA[
         /// Represents a HereDoc e.g.
-        /// 
+        ///
         /// <<EOF
         /// Some Text
         /// Goes here
         /// EOF
-        /// 
+        ///
         /// or
-        /// 
+        ///
         /// <<-EOF
         ///   Some Text
         ///   Goes here
         /// EOF
         /// ]]></summary>
         public static readonly Parser<Tuple<string, bool, string>> HereDoc =
-        (from open in Parse.Char('<').Repeat(2).Text()
-            from indentMarker in Parse.Char('-').Optional()
-            from marker in Parse.AnyChar.Except(Parse.Char(LineBreak)).Many().Text()
-            from lineBreak in Parse.Char(LineBreak)
-            from rest in Parse.AnyChar.Except(Parse.String(marker))
-                .Or(Parse.Char(LineBreak))
-                .Many().Text()
-            from last in Parse.String(marker)
-            select Tuple.Create(marker, indentMarker.IsDefined, lineBreak + rest)).Token();
+            (from open in Parse.Char('<').Repeat(2).Text()
+                from indentMarker in Parse.Char('-').Optional()
+                from marker in Parse.AnyChar.Except(Parse.Char(LineBreak)).Many().Text()
+                from lineBreak in Parse.Char(LineBreak)
+                from rest in Parse.AnyChar.Except(Parse.String(marker))
+                    .Or(Parse.Char(LineBreak))
+                    .Many().Text()
+                from last in Parse.String(marker)
+                select Tuple.Create(marker, indentMarker.IsDefined, lineBreak + rest)).Token();
 
         /// <summary>
         /// Represents the "//" used to start a comment
@@ -260,20 +353,20 @@ namespace Octopus.CoreParsers.Hcl
         /// Represents quoted text
         /// </summary>
         public static readonly Parser<string> QuotedText =
-        (from open in DelimiterQuote
-            from content in Parse.CharExcept('"').Many().Text()
-            from close in DelimiterQuote
-            select content).Token();
+            (from open in DelimiterQuote
+                from content in Parse.CharExcept('"').Many().Text()
+                from close in DelimiterQuote
+                select content).Token();
 
         /// <summary>
         /// Represents the various values that can be assigned to properties
         /// i.e. quoted text, numbers and booleans
         /// </summary>
         public static readonly Parser<string> PropertyValue =
-        (from value in StringLiteralQuote
-                .Or(Parse.Regex(NumberRegex).Text())
-                .Or(Parse.Regex(TrueFalse).Text())
-            select value).Token();
+            (from value in StringLiteralQuote
+                    .Or(Parse.Regex(NumberRegex).Text())
+                    .Or(Parse.Regex(TrueFalse).Text())
+                select value).Token();
 
         /// <summary>
         /// The value of an individual item in a list
@@ -297,12 +390,12 @@ namespace Octopus.CoreParsers.Hcl
         /// <summary>
         /// Array start token
         /// </summary>
-        public static readonly Parser<char> LeftBracker = Parse.Char('[').Token();
+        public static readonly Parser<char> LeftBracket = Parse.Char('[').Token();
 
         /// <summary>
         /// Array end token
         /// </summary>
-        public static readonly Parser<char> RightBracker = Parse.Char(']').Token();
+        public static readonly Parser<char> RightBracket = Parse.Char(']').Token();
 
         /// <summary>
         /// Object start token
@@ -335,7 +428,7 @@ namespace Octopus.CoreParsers.Hcl
         /// </summary>
         public static readonly Parser<HclElement> ListValue =
         (
-            from open in LeftBracker
+            from open in LeftBracket
             from content in
             (
                 from embeddedValues in ListValue
@@ -347,7 +440,7 @@ namespace Octopus.CoreParsers.Hcl
                 from comma in Comma.Optional()
                 select embeddedValues
             ).Token().Many()
-            from close in RightBracker
+            from close in RightBracket
             select new HclListElement {Children = content}
         ).Token();
 
@@ -358,7 +451,7 @@ namespace Octopus.CoreParsers.Hcl
         (
             from equal in Parse.Char('=')
             select equal
-        ).Token();
+        ).WithWhiteSpace();
 
         /// <summary>
         /// Represents a value that can be assigned to a property
@@ -367,8 +460,9 @@ namespace Octopus.CoreParsers.Hcl
             from name in Identifier
             from eql in Equal
             from value in PropertyValue
+                .Or(StringLiteralUnquotedContent)
             select new HclStringPropertyElement {Name = name, Value = value, NameQuoted = false};
-        
+
         /// <summary>
         /// Represents a value that can be assigned to a property
         /// </summary>
@@ -376,7 +470,8 @@ namespace Octopus.CoreParsers.Hcl
             from name in StringLiteralQuote
             from eql in Equal
             from value in PropertyValue
-            select new HclStringPropertyElement {Name = name, Value = value, NameQuoted = true};        
+                .Or(StringLiteralUnquotedContent)
+            select new HclStringPropertyElement {Name = name, Value = value, NameQuoted = true};
 
         /// <summary>
         /// Represents a multiline string
@@ -393,7 +488,7 @@ namespace Octopus.CoreParsers.Hcl
                 Trimmed = value.Item2,
                 Value = value.Item3
             };
-        
+
         /// <summary>
         /// Represents a multiline string
         /// </summary>
@@ -408,7 +503,7 @@ namespace Octopus.CoreParsers.Hcl
                 Marker = value.Item1,
                 Trimmed = value.Item2,
                 Value = value.Item3
-            };        
+            };
 
         /// <summary>
         /// Represents a list property
@@ -418,7 +513,7 @@ namespace Octopus.CoreParsers.Hcl
             from eql in Equal
             from value in ListValue
             select new HclListPropertyElement {Name = name, Children = value.Children, NameQuoted = false};
-        
+
         /// <summary>
         /// Represents a list property
         /// </summary>
@@ -438,9 +533,28 @@ namespace Octopus.CoreParsers.Hcl
             select new HclMapPropertyElement {Name = name, Children = properties.Children};
 
         /// <summary>
+        /// Represent a for loop generating an object assigned to a property
+        /// </summary>
+        public static readonly Parser<HclElement> HclElementForLoopObjectProperty =
+            from name in Identifier.Or(StringLiteralQuote)
+            from eql in Equal
+            from properties in ForLoopObjectValue
+            select new HclMapPropertyElement {Name = name, Children = properties.Children};
+
+        /// <summary>
+        /// Represent a for loop generating an list assigned to a property
+        /// </summary>
+        public static readonly Parser<HclElement> HclElementForLoopListProperty =
+            from name in Identifier.Or(StringLiteralQuote)
+            from eql in Equal
+            from value in ForLoopListValue
+            select new HclListPropertyElement {Name = name, Children = value.Children, NameQuoted = false};
+
+        /// <summary>
         /// Represents a named element with child properties
         /// </summary>
         public static readonly Parser<HclElement> HclNameElement =
+            from dynamic in Dynamic.Optional()
             from name in Identifier.Or(StringLiteralQuote)
             from lbracket in LeftCurly
             from properties in HclProperties.Optional()
@@ -451,6 +565,7 @@ namespace Octopus.CoreParsers.Hcl
         /// Represents a named element with a value and child properties
         /// </summary>
         public static readonly Parser<HclElement> HclNameValueElement =
+            from dynamic in Dynamic.Optional()
             from name in Identifier
             from eql in Equal.Optional()
             from value in Identifier.Or(StringLiteralQuote)
@@ -463,6 +578,7 @@ namespace Octopus.CoreParsers.Hcl
         /// Represents named elements with values and types. These are things like resources.
         /// </summary>
         public static readonly Parser<HclElement> HclNameValueTypeElement =
+            from dynamic in Dynamic.Optional()
             from name in Identifier
             from value in Identifier.Or(StringLiteralQuote)
             from type in Identifier.Or(StringLiteralQuote)
@@ -475,20 +591,23 @@ namespace Octopus.CoreParsers.Hcl
         /// Represents the properties that can be added to an element
         /// </summary>
         public static readonly Parser<IEnumerable<HclElement>> HclProperties =
-        (from value in HclNameElement
-                .Or(HclNameValueElement)
-                .Or(HclNameValueTypeElement)
-                .Or(HclElementProperty)
-                .Or(QuotedHclElementProperty)
-                .Or(HclElementListProperty)
-                .Or(QuotedHclElementListProperty)
-                .Or(HclElementMapProperty)
-                .Or(HclElementMultilineProperty)
-                .Or(QuotedHclElementMultilineProperty)
-                .Or(SingleLineComment)
-                .Or(MultilineComment)
-            from comma in Comma.Optional()
-            select value).Many().Token();
+            (from value in HclNameElement
+                    .Or(ForLoopObjectValue)
+                    .Or(HclNameValueElement)
+                    .Or(HclNameValueTypeElement)
+                    .Or(HclElementProperty)
+                    .Or(QuotedHclElementProperty)
+                    .Or(HclElementListProperty)
+                    .Or(QuotedHclElementListProperty)
+                    .Or(HclElementMapProperty)
+                    .Or(HclElementMultilineProperty)
+                    .Or(QuotedHclElementMultilineProperty)
+                    .Or(SingleLineComment)
+                    .Or(MultilineComment)
+                    .Or(HclElementForLoopObjectProperty)
+                    .Or(HclElementForLoopListProperty)
+                from comma in Comma.Optional()
+                select value).Many().Token();
 
         /// <summary>
         /// The top level document. If you are parsing a HCL file, this is the Parser to use.
@@ -517,5 +636,23 @@ namespace Octopus.CoreParsers.Hcl
             .Replace("\v", "\\v")
             .Replace("\"", "\\\"");
 
+
     }
+
+    static class SpracheExtensions
+    {
+        /// <summary>
+        /// An option to Token() which does not consume line breaks
+        /// </summary>
+        public static Parser<T> WithWhiteSpace<T>(this Parser<T> parser)
+        {
+            if (parser == null) throw new ArgumentNullException("parser");
+
+            return from leading in Parse.WhiteSpace.Except(Parse.Char(HclParser.LineBreak)).Many()
+                from item in parser
+                from trailing in Parse.WhiteSpace.Except(Parse.Char(HclParser.LineBreak)).Many()
+                select item;
+        }
+    }
+
 }
