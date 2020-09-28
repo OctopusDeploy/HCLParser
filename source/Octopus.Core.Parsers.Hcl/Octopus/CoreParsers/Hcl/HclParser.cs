@@ -402,7 +402,7 @@ namespace Octopus.CoreParsers.Hcl
                 select new HclPrimitiveTypeElement {Value = value}).Token();
 
         /// <summary>
-        /// New in 0.12 - An object definition
+        /// New in 0.12 - An object definition. Todo: allow brackets to be separated. Add comment elements. Add commas.
         /// </summary>
         public static readonly Parser<HclElement> ObjectTypeProperty =
             (from objectType in Parse.String("object({").Token()
