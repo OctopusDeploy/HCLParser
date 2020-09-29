@@ -106,7 +106,7 @@ namespace Octopus.CoreParsers.Hcl
         /// <summary>
         /// The index used to access an item in the list
         /// </summary>
-        public static readonly Parser<string> ListIndex = Parse.Regex(@"\[([0-9]+|\*)\]").Named("ListIndex");
+        public static readonly Parser<string> ListIndex = Parse.Regex(@"\[((\d|\w|[_\-.])+|\*)\]").Named("ListIndex");
 
         /// <summary>
         /// Escaped quote
@@ -211,8 +211,10 @@ namespace Octopus.CoreParsers.Hcl
                 .Except(Parse.Char('['))                // Don't consume the start of an list
                 .Except(Parse.Regex(FunctionStart))        // functions are matched elsewhere
                 .Except(Parse.Char('<').Repeat(2))      // heredoc is not matched here
+                .Except(Parse.Char('?'))                // don't participate in ternary statements
+                .Except(Parse.Char(':'))                // don't participate in ternary statements
             from content in
-                (ListIndex                             // Do consume indexes
+                ListIndex                             // Do consume indexes
                     .Or(Parse.AnyChar
                         .Except(Parse.Char(LineBreak))
                         .Except(Parse.Regex(@"\s"))
@@ -222,10 +224,45 @@ namespace Octopus.CoreParsers.Hcl
                         .Except(Parse.Char(']'))                // Don't consume the end of an list
                         .Except(Parse.Char('['))                // Don't consume the start of an list
                         .Many().Text())
-                    ).Many()
+                    .Or(from mathExpression in StringLiteralUnquotedMathExpressionElement
+                        select mathExpression.Value)
+                    .Many()
 
             select new StringValue(start + string.Join(string.Empty, content), false);
 
+        /// <summary>
+        /// HCL2 is essentially a calculator. It offers arithmetic and logic operators that need to be taken
+        /// into account when processing an unquoted string.
+        ///
+        /// We are not interested in breaking these operators down, so they are simply considered part of
+        /// an unquoted string.
+        ///
+        /// New in 0.12
+        /// </summary>
+        public static readonly Parser<StringValue> StringLiteralUnquotedMathExpressionElement =
+            from operations in
+            (
+                from mathOperator in
+                    Parse.String("*")
+                        .Or(Parse.String("/"))
+                        .Or(Parse.String("%"))
+                        .Or(Parse.String("+"))
+                        .Or(Parse.String("-"))
+                        .Or(Parse.String("<"))
+                        .Or(Parse.String(">"))
+                        .Or(Parse.String(">="))
+                        .Or(Parse.String(">="))
+                        .Or(Parse.String("!="))
+                        .Or(Parse.String("=="))
+                        .Or(Parse.String("&&"))
+                        .Or(Parse.String("||"))
+                        .Text()
+                        .Token()
+                from rightHandSide in PropertyValue
+                    .Or(StringLiteralUnquotedContent)
+                select mathOperator + " " + rightHandSide.QuotedValue)
+            .Many()
+            select new StringValue(" " + string.Join(" ", operations), false);
 
         /// <summary>
         /// Matches function parameter. New in 0.12.
@@ -323,9 +360,9 @@ namespace Octopus.CoreParsers.Hcl
         /// </summary>
         public static readonly Parser<StringValue> StringLiteralQuote =
             (from start in DelimiterQuote
-                from content in StringLiteralQuoteContent.Many()
+                from content in StringLiteralQuoteContent.Many().Optional()
                 from end in DelimiterQuote
-                select new StringValue(string.Concat(content), true)
+                select new StringValue(string.Concat(content.GetOrDefault()), true)
             ).Token();
 
         /// <summary>
@@ -433,33 +470,26 @@ namespace Octopus.CoreParsers.Hcl
                         select new StringValue(boolean, false))
                 select value).Token();
 
-        /// <summary>
-        /// Matches the plain text in a string, or the Interpolation block. New in 0.12
-        /// </summary>
-        public static readonly Parser<StringValue> TernaryStatement =
-            from variable in PropertyValue
-                .Or(StringLiteralUnquotedContent)
-            from compare in Parse.String("==").Token() // TODO: add more comparasions
-            from logic in TernaryLogic
-            select new StringValue(variable.QuotedValue + " " + compare + " " + logic.Value, false);
+        public static readonly Parser<StringValue> QuotedOrUnquotedText =
+            from text in StringLiteralUnquotedContent
+                .Or(PropertyValue)
+            select text;
 
+        /// <summary>
+        /// A ternary statement i.e.
+        /// a ? b : c
+        /// </summary>
         public static readonly Parser<StringValue> TernaryLogic =
-            (from test in
-                StringLiteralUnquotedContent
-                    .Or(PropertyValue)
+            (from test in QuotedOrUnquotedText
                 from equalsDelimiter in Parse.String("?").Token()
                 from trueValue in
-                    Parse.Ref(() =>
-                        TernaryStatement
-                            .Or(StringLiteralUnquotedContent)
-                            .Or(PropertyValue))
+                    TernaryLogic
+                        .Or(QuotedOrUnquotedText)
                 from colonDelimiter in Parse.String(":").Token()
                 from falseValue in
-                    Parse.Ref(() =>
-                        TernaryStatement
-                            .Or(StringLiteralUnquotedContent)
-                            .Or(PropertyValue))
-            select new StringValue(test.QuotedValue + " ? " + trueValue.QuotedValue + " : " + falseValue.QuotedValue, false)).Token();
+                    TernaryLogic
+                        .Or(QuotedOrUnquotedText)
+                select new StringValue(test.QuotedValue + " ? " + trueValue.QuotedValue + " : " + falseValue.QuotedValue, false)).Token();
 
         /// <summary>
         /// New in 0.12 - An primitive definition
@@ -709,7 +739,7 @@ namespace Octopus.CoreParsers.Hcl
         public static readonly Parser<HclElement> HclElementProperty =
             from name in Identifier
             from eql in Equal
-            from value in TernaryStatement
+            from value in TernaryLogic
                 .Or(StringLiteralUnquotedContent)
                 .Or(PropertyValue)
             select new HclStringPropertyElement {Name = name.Value, Value = value.Value, NameQuoted = false};
@@ -720,7 +750,7 @@ namespace Octopus.CoreParsers.Hcl
         public static readonly Parser<HclElement> QuotedHclElementProperty =
             from name in StringLiteralQuote
             from eql in Equal
-            from value in TernaryStatement
+            from value in TernaryLogic
                 .Or(StringLiteralUnquotedContent)
                 .Or(PropertyValue)
             select new HclStringPropertyElement {Name = name.Value, Value = value.Value, NameQuoted = true};

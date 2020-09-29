@@ -85,11 +85,22 @@ namespace Octopus.CoreParsers.Hcl
             }
         }
 
+        [TestCase("var.region == 0 ? data.aws_region.this.name : var.region")]
         [TestCase("var.region == \"\" ? data.aws_region.this.name : var.region")]
+        [TestCase("var.region == \"\" ? data.aws_region.this.name : a ? b : c")]
         [TestCase("var.region == \"\" ? data.aws_region.this.name : a ? b : c")]
         public void TestTernary(string index)
         {
-            var result = HclParser.TernaryStatement.Parse(index);
+            var result = HclParser.TernaryLogic.Parse(index);
+            result.Value.Should().Be(index);
+        }
+
+        [TestCase("var.region == \"\"")]
+        [TestCase("var.region == blah")]
+        [TestCase("var.region == blah + 3 - 2 * 1")]
+        public void TestText(string index)
+        {
+            var result = HclParser.QuotedOrUnquotedText.Parse(index);
             result.Value.Should().Be(index);
         }
 
