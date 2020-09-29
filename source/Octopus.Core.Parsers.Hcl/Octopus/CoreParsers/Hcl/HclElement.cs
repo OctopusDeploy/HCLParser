@@ -71,6 +71,11 @@ namespace Octopus.CoreParsers.Hcl
         /// <summary>
         /// The type defining an object property
         /// </summary>
+        public const string FunctionType = "FunctionType";
+
+        /// <summary>
+        /// The type defining an object property
+        /// </summary>
         public const string ObjectPropertyType = "ObjectProperty";
 
         /// <summary>

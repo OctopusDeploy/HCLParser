@@ -85,6 +85,67 @@ namespace Octopus.CoreParsers.Hcl
             }
         }
 
+        [TestCase("var.region == \"\" ? data.aws_region.this.name : var.region")]
+        [TestCase("var.region == \"\" ? data.aws_region.this.name : a ? b : c")]
+        public void TestTernary(string index)
+        {
+            var result = HclParser.TernaryStatement.Parse(index);
+            result.Value.Should().Be(index);
+        }
+
+        [Test]
+        [TestCase("tags = merge(\"var.tags\")")]
+        [TestCase("tags = merge(\"var.tags\", \"blah\")")]
+        [TestCase("tags = merge(\"var.tags\", \"blah\", merge(\"var.tags\", \"blah\"))")]
+        [TestCase("tags = merge(\"var.tags\", {\n  \"Name\" = \"${var.network_name}-ip\"\n})")]
+        [TestCase("tags = merge({\n  \"Name\" = \"${var.network_name}-ip\"\n})")]
+        public void TestFunctionAssignment(string index)
+        {
+            var result = HclParser.HclFunctionProperty.Parse(index);
+            result.ToString().Should().Be(index);
+        }
+
+        [Test]
+        [TestCase("locals {\n  tags = merge(\"var.tags\")\n}")]
+        [TestCase("locals {\n  tags = merge(\"var.tags1\", \"var.tags2\")\n}")]
+        [TestCase("locals {\n  tags = merge(var.tags, {\"Name\" = \"${var.network_name}-ip\"})\n}")]
+        [TestCase("locals {\n  tags = merge({\"Name\" = \"${var.network_name}-ip\"})\n}")]
+        [TestCase("locals {\n  depends_on = [\n  aws_s3_bucket.bucket\n]\n}")]
+        public void TestFunctionAssignmentInElement(string index)
+        {
+            var result = HclParser.HclNameElement.Parse(index);
+            result.ToString().Should().Be(index);
+        }
+
+        [TestCase("merge(\"var.tags\", \"blah\")")]
+        public void TestFunctionCall(string index)
+        {
+            var result = HclParser.FunctionCall.Parse(index);
+            result.ToString().Should().Be(index);
+        }
+
+        [TestCase("depends_on = [\n  aws_s3_bucket.bucket\n]")]
+        public void TestListAssignment(string index)
+        {
+            var result = HclParser.HclElementListProperty.Parse(index);
+            result.ToString().Should().Be(index);
+        }
+
+        [Test]
+        [TestCase("merge(\"var.tags\")")]
+        public void TestUnquotedString(string index)
+        {
+            try
+            {
+                var result = HclParser.StringLiteralUnquotedContent.Parse(index);
+                Assert.Fail();
+            }
+            catch
+            {
+                // all good
+            }
+        }
+
         [Test]
         [TestCase("hcl2example1.txt")]
         [TestCase("hcl2example2.txt")]

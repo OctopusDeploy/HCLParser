@@ -74,7 +74,7 @@ namespace Octopus.CoreParsers.Hcl
         {
             var template = TerraformLoadTemplate("string_without_interpolation_parsing.txt");
             var parsed = HclParser.StringLiteralQuote.Parse(template);
-            parsed.Should().Match("${element(var.remote_port[\"${element(keys(var.remote_port), count.index)}\"], 1)}");
+            parsed.Value.Should().Match("${element(var.remote_port[\"${element(keys(var.remote_port), count.index)}\"], 1)}");
         }
 
         [Test]
@@ -400,7 +400,7 @@ namespace Octopus.CoreParsers.Hcl
         {
             var template = TerraformLoadTemplate("curlytexttest.txt");
             var parsed = HclParser.StringLiteralQuote.Parse(template);
-            parsed.Should().Match("Hi ${\"there\"}");
+            parsed.Value.Should().Match("Hi ${\"there\"}");
         }
 
         [Test]

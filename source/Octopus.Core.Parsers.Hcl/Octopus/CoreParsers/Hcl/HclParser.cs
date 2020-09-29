@@ -35,6 +35,16 @@ namespace Octopus.CoreParsers.Hcl
         public static readonly Regex StartOfIfStatement = new Regex(@"\s(?=if)");
 
         /// <summary>
+        /// A regex to match function names
+        /// </summary>
+        public static readonly Regex FunctionName = new Regex("[a-zA-Z][a-zA-Z0-9]*");
+
+        /// <summary>
+        /// A regex to match function definitions
+        /// </summary>
+        public static readonly Regex FunctionStart = new Regex(@"[a-zA-Z][a-zA-Z0-9]*\(");
+
+        /// <summary>
         /// The \n char
         /// </summary>
         public const char LineBreak = (char) 10;
@@ -186,19 +196,30 @@ namespace Octopus.CoreParsers.Hcl
         /// <summary>
         /// Matches an unquoted string. New in 0.12
         /// </summary>
-        public static readonly Parser<string> StringLiteralUnquotedContent =
+        public static readonly Parser<StringValue> StringLiteralUnquotedContent =
             from start in Parse.AnyChar
                 .Except(Parse.Char('"'))
                 .Except(Parse.Char('\''))
-                .Except(Parse.Char('{'))
-                .Except(Parse.Char('['))
-                .Except(Parse.Char('<'))
                 .Except(Parse.Char(LineBreak))
+                .Except(Parse.Regex(@"\s"))
+                .Except(Parse.Char(','))                // Don't consume the comma when used in a list
+                .Except(Parse.Char(')'))                // Don't consume the end of a function call
+                .Except(Parse.Char('('))                // Don't consume the start of a function call
+                .Except(Parse.Char('}'))                // Don't consume the end of an object
+                .Except(Parse.Char('{'))                // Don't consume the start of an object
+                .Except(Parse.Char(']'))                // Don't consume the end of an list
+                .Except(Parse.Char('['))                // Don't consume the start of an list
+                .Except(Parse.Regex(FunctionStart))        // functions are matched elsewhere
+                .Except(Parse.Char('<').Repeat(2))      // heredoc is not matched here
             from content in Parse.AnyChar
                 .Except(Parse.Char(LineBreak))
-                .Except(Parse.Char('}'))
+                .Except(Parse.Regex(@"\s"))
+                .Except(Parse.Char(','))                // Don't consume the comma when used in a list
+                .Except(Parse.Char(')'))                // Don't consume the end of a function call
+                .Except(Parse.Char('}'))                // Don't consume the end of an object
+                .Except(Parse.Char(']'))                // Don't consume the end of an list
                 .Many().Text()
-            select start + content;
+            select new StringValue(start + content, false);
 
 
         /// <summary>
@@ -295,11 +316,11 @@ namespace Octopus.CoreParsers.Hcl
         /// <summary>
         /// Matches multiple StringLiteralQuoteContent to make up the string
         /// </summary>
-        public static readonly Parser<string> StringLiteralQuote =
+        public static readonly Parser<StringValue> StringLiteralQuote =
             (from start in DelimiterQuote
                 from content in StringLiteralQuoteContent.Many()
                 from end in DelimiterQuote
-                select string.Concat(content)
+                select new StringValue(string.Concat(content), true)
             ).Token();
 
         /// <summary>
@@ -373,15 +394,16 @@ namespace Octopus.CoreParsers.Hcl
         /// <summary>
         /// Represents the identifiers that are used for names, values and types.
         /// </summary>
-        public static readonly Parser<string> Identifier =
-            Parse.Regex(@"(\d|\w|[_\-.])+").Text().Token();
+        public static readonly Parser<StringValue> Identifier =
+            from value in Parse.Regex(@"(\d|\w|[_\-.])+").Text().Token()
+            select new StringValue(value, false);
 
         /// <summary>
         /// Represents the identifiers that are used for property names
         /// According to https://github.com/hashicorp/hcl/blob/ae25c981c128d7a7a5241e3b7d7409089355df69/hcl/scanner/scanner_test.go
         /// all strings are double quoted.
         /// </summary>
-        public static readonly Parser<string> PropertyIdentifier =
+        public static readonly Parser<StringValue> PropertyIdentifier =
             Identifier.Or(StringLiteralQuote).Token();
 
         /// <summary>
@@ -397,11 +419,41 @@ namespace Octopus.CoreParsers.Hcl
         /// Represents the various values that can be assigned to properties
         /// i.e. quoted text, numbers and booleans
         /// </summary>
-        public static readonly Parser<string> PropertyValue =
+        public static readonly Parser<StringValue> PropertyValue =
             (from value in StringLiteralQuote
-                    .Or(Parse.Regex(NumberRegex).Text())
-                    .Or(Parse.Regex(TrueFalse).Text())
+                    .Or(from number in Parse.Regex(NumberRegex).Text()
+                        select new StringValue(number, false))
+                    .Or(from boolean in Parse.Regex(TrueFalse).Text()
+                        select new StringValue(boolean, false))
                 select value).Token();
+
+        /// <summary>
+        /// Matches the plain text in a string, or the Interpolation block. New in 0.12
+        /// </summary>
+        public static readonly Parser<StringValue> TernaryStatement =
+            from variable in PropertyValue
+                .Or(StringLiteralUnquotedContent)
+            from compare in Parse.String("==").Token() // TODO: add more comparasions
+            from logic in TernaryLogic
+            select new StringValue(variable.QuotedValue + " " + compare + " " + logic.Value, false);
+
+        public static readonly Parser<StringValue> TernaryLogic =
+            (from test in
+                StringLiteralUnquotedContent
+                    .Or(PropertyValue)
+                from equalsDelimiter in Parse.String("?").Token()
+                from trueValue in
+                    Parse.Ref(() =>
+                        TernaryStatement
+                            .Or(StringLiteralUnquotedContent)
+                            .Or(PropertyValue))
+                from colonDelimiter in Parse.String(":").Token()
+                from falseValue in
+                    Parse.Ref(() =>
+                        TernaryStatement
+                            .Or(StringLiteralUnquotedContent)
+                            .Or(PropertyValue))
+            select new StringValue(test.QuotedValue + " ? " + trueValue.QuotedValue + " : " + falseValue.QuotedValue, false)).Token();
 
         /// <summary>
         /// New in 0.12 - An primitive definition
@@ -434,6 +486,56 @@ namespace Octopus.CoreParsers.Hcl
                 from closeCurly in RightCurly
                 from closeBracket in RightBracket
                 select new HclObjectTypeElement {Children = content}).Token();
+
+        /// <summary>
+        /// New in 0.12 - An set definition
+        /// </summary>
+        public static readonly Parser<HclElement> FunctionCall =
+            (from funcName in Parse.Regex(FunctionName)
+                from bracket in LeftBracket
+                from firstItems in
+                (
+                    from embeddedValues in
+                        Parse.Ref(() =>
+                            FunctionCall
+                                .Or(ListValue)
+                                .Or(MapValue)
+                                .Or(LiteralListValue)
+                                .Or(HereDocListValue)
+                                .Or(SingleLineComment)
+                                .Or(MultilineComment))
+                    from comma in Comma
+                    select embeddedValues
+                ).Token().Many().Optional()
+                from lastItem in
+                (
+                    from embeddedValues in
+                        Parse.Ref(() =>
+                            FunctionCall
+                                .Or(ListValue)
+                                .Or(MapValue)
+                                .Or(LiteralListValue)
+                                .Or(HereDocListValue)
+                                .Or(SingleLineComment)
+                                .Or(MultilineComment))
+
+                    select embeddedValues
+                ).Token()
+                from closeBracket in RightBracket
+                select new HclFunctionElement
+                {
+                    Name = funcName,
+                    Children = (firstItems.GetOrDefault() ?? Enumerable.Empty<HclElement>()).Union(lastItem.ToEnumerable())
+                }).Token();
+
+        /// <summary>
+        /// New in 0.12 - Represent a property holding a type
+        /// </summary>
+        public static readonly Parser<HclElement> HclFunctionProperty =
+            (from name in Identifier.Or(StringLiteralQuote)
+                from eql in Equal
+                from value in FunctionCall
+                select new HclTypePropertyElement {Name = name.Value, Children = value.ToEnumerable(), NameQuoted = false}).Token();
 
         /// <summary>
         /// New in 0.12 - An set definition
@@ -504,7 +606,8 @@ namespace Octopus.CoreParsers.Hcl
         /// </summary>
         public static readonly Parser<HclElement> LiteralListValue =
             from literal in PropertyValue
-            select new HclStringElement {Value = literal};
+                .Or(StringLiteralUnquotedContent)
+            select new HclStringElement {Value = literal.Value};
 
         /// <summary>
         /// The value of an individual heredoc item in a list
@@ -600,9 +703,10 @@ namespace Octopus.CoreParsers.Hcl
         public static readonly Parser<HclElement> HclElementProperty =
             from name in Identifier
             from eql in Equal
-            from value in PropertyValue
+            from value in TernaryStatement
                 .Or(StringLiteralUnquotedContent)
-            select new HclStringPropertyElement {Name = name, Value = value, NameQuoted = false};
+                .Or(PropertyValue)
+            select new HclStringPropertyElement {Name = name.Value, Value = value.Value, NameQuoted = false};
 
         /// <summary>
         /// Represents a value that can be assigned to a property
@@ -610,9 +714,10 @@ namespace Octopus.CoreParsers.Hcl
         public static readonly Parser<HclElement> QuotedHclElementProperty =
             from name in StringLiteralQuote
             from eql in Equal
-            from value in PropertyValue
+            from value in TernaryStatement
                 .Or(StringLiteralUnquotedContent)
-            select new HclStringPropertyElement {Name = name, Value = value, NameQuoted = true};
+                .Or(PropertyValue)
+            select new HclStringPropertyElement {Name = name.Value, Value = value.Value, NameQuoted = true};
 
         /// <summary>
         /// Represents a function property. New in 0.12
@@ -621,7 +726,7 @@ namespace Octopus.CoreParsers.Hcl
             from name in Identifier
             from eql in Equal
             from value in FunctionParameterUnquotedContent
-            select new HclStringPropertyElement {Name = name, Value = value, NameQuoted = false};
+            select new HclStringPropertyElement {Name = name.Value, Value = value, NameQuoted = false};
 
         /// <summary>
         /// Represents a quoted function property. New in 0.12
@@ -630,7 +735,7 @@ namespace Octopus.CoreParsers.Hcl
             from name in StringLiteralQuote
             from eql in Equal
             from value in FunctionParameterUnquotedContent
-            select new HclStringPropertyElement {Name = name, Value = value, NameQuoted = true};
+            select new HclStringPropertyElement {Name = name.Value, Value = value, NameQuoted = true};
 
         /// <summary>
         /// Represents a multiline string
@@ -641,7 +746,7 @@ namespace Octopus.CoreParsers.Hcl
             from value in HereDoc
             select new HclHereDocPropertyElement
             {
-                Name = name,
+                Name = name.Value,
                 NameQuoted = false,
                 Marker = value.Item1,
                 Trimmed = value.Item2,
@@ -657,7 +762,7 @@ namespace Octopus.CoreParsers.Hcl
             from value in HereDoc
             select new HclHereDocPropertyElement
             {
-                Name = name,
+                Name = name.Value,
                 NameQuoted = true,
                 Marker = value.Item1,
                 Trimmed = value.Item2,
@@ -671,7 +776,7 @@ namespace Octopus.CoreParsers.Hcl
             from name in Identifier.Or(StringLiteralQuote)
             from eql in Equal
             from value in ListValue
-            select new HclListPropertyElement {Name = name, Children = value.Children, NameQuoted = false};
+            select new HclListPropertyElement {Name = name.Value, Children = value.Children, NameQuoted = false};
 
         /// <summary>
         /// Represents a list property
@@ -680,7 +785,7 @@ namespace Octopus.CoreParsers.Hcl
             from name in StringLiteralQuote
             from eql in Equal
             from value in ListValue
-            select new HclListPropertyElement {Name = name, Children = value.Children, NameQuoted = true};
+            select new HclListPropertyElement {Name = name.Value, Children = value.Children, NameQuoted = true};
 
         /// <summary>
         /// Represent a map assigned to a named value
@@ -689,7 +794,7 @@ namespace Octopus.CoreParsers.Hcl
             from name in Identifier.Or(StringLiteralQuote)
             from eql in Equal
             from properties in MapValue
-            select new HclMapPropertyElement {Name = name, Children = properties.Children};
+            select new HclMapPropertyElement {Name = name.Value, Children = properties.Children};
 
         /// <summary>
         /// New in 0.12 - Represent a for loop generating an object assigned to a property
@@ -698,7 +803,7 @@ namespace Octopus.CoreParsers.Hcl
             (from name in Identifier.Or(StringLiteralQuote)
             from eql in Equal
             from properties in ForLoopObjectValue
-            select new HclMapPropertyElement {Name = name, Children = properties.Children}).Token();
+            select new HclMapPropertyElement {Name = name.Value, Children = properties.Children}).Token();
 
         /// <summary>
         /// New in 0.12 - Represent a for loop generating an list assigned to a property
@@ -707,7 +812,7 @@ namespace Octopus.CoreParsers.Hcl
             (from name in Identifier.Or(StringLiteralQuote)
             from eql in Equal
             from value in ForLoopListValue
-            select new HclListPropertyElement {Name = name, Children = value.Children, NameQuoted = false}).Token();
+            select new HclListPropertyElement {Name = name.Value, Children = value.Children, NameQuoted = false}).Token();
 
         /// <summary>
         /// New in 0.12 - Represent a property holding a type
@@ -720,7 +825,7 @@ namespace Octopus.CoreParsers.Hcl
                 .Or(ListTypeProperty)
                 .Or(SetTypeProperty)
                 .Or(TupleTypeProperty)
-            select new HclTypePropertyElement {Name = name, Children = value.ToEnumerable(), NameQuoted = false}).Token();
+            select new HclTypePropertyElement {Name = name.Value, Children = value.ToEnumerable(), NameQuoted = false}).Token();
 
         /// <summary>
         /// New in 0.12 - An plain type definition
@@ -729,7 +834,7 @@ namespace Octopus.CoreParsers.Hcl
             (from name in Identifier.Or(StringLiteralQuote)
             from eql in Equal
             from value in PrimitiveTypeProperty
-            select new HclTypePropertyElement {Name = name, Children = value.ToEnumerable(), NameQuoted = false}).Token();
+            select new HclTypePropertyElement {Name = name.Value, Children = value.ToEnumerable(), NameQuoted = false}).Token();
 
         /// <summary>
         /// Represents a function. New in 0.12. e.g.:
@@ -749,7 +854,7 @@ namespace Octopus.CoreParsers.Hcl
                 .Many()
                 .Optional()
             from rbracket in RightCurly
-            select new HclElement {Name = name, Value = value, Children = properties.GetOrDefault()};
+            select new HclElement {Name = name, Value = value.Value, Children = properties.GetOrDefault()};
 
         /// <summary>
         /// Represents a named element with child properties
@@ -757,10 +862,11 @@ namespace Octopus.CoreParsers.Hcl
         public static readonly Parser<HclElement> HclNameElement =
             from dynamic in Dynamic.Optional()
             from name in Identifier.Or(StringLiteralQuote)
+            from eql in Equal.Optional()
             from lbracket in LeftCurly
             from properties in HclProperties.Optional()
             from rbracket in RightCurly
-            select new HclElement {Name = name, Children = properties.GetOrDefault()};
+            select new HclElement {Name = name.Value, Children = properties.GetOrDefault()};
 
         /// <summary>
         /// Represents a named element with a value and child properties
@@ -773,7 +879,7 @@ namespace Octopus.CoreParsers.Hcl
             from lbracket in LeftCurly
             from properties in HclProperties.Optional()
             from rbracket in RightCurly
-            select new HclElement {Name = name, Value = value, Children = properties.GetOrDefault()};
+            select new HclElement {Name = name.Value, Value = value.Value, Children = properties.GetOrDefault()};
 
         /// <summary>
         /// Represents named elements with values and types. These are things like resources.
@@ -786,7 +892,7 @@ namespace Octopus.CoreParsers.Hcl
             from lbracket in LeftCurly
             from properties in HclProperties.Optional()
             from rbracket in RightCurly
-            select new HclElement {Name = name, Value = value, Type = type, Children = properties.GetOrDefault()};
+            select new HclElement {Name = name.Value, Value = value.Value, Type = type.Value, Children = properties.GetOrDefault()};
 
         /// <summary>
         /// Represents the properties that can be added to an element
@@ -794,6 +900,7 @@ namespace Octopus.CoreParsers.Hcl
         public static readonly Parser<IEnumerable<HclElement>> HclProperties =
             (from value in HclNameElement
                     .Or(HclElementTypedObjectProperty)
+                    .Or(HclFunctionProperty)
                     .Or(ForLoopObjectValue)
                     .Or(HclFunctionElement)
                     .Or(HclNameValueElement)
