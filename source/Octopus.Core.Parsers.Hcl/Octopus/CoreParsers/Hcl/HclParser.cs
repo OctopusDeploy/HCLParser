@@ -398,9 +398,10 @@ namespace Octopus.CoreParsers.Hcl
 
         /// <summary>
         /// Represents the identifiers that are used for names, values and types.
+        /// New in 0.12 - identifiers can be wrapped in quote to indicate that the name references a variable
         /// </summary>
         public static readonly Parser<StringValue> Identifier =
-            from value in Parse.Regex(@"(\d|\w|[_\-.])+").Text().Token()
+            from value in Parse.Regex(@"(\d|\w|[_\-.])+|\((\d|\w|[_\-.])+\)").Text().Token()
             select new StringValue(value, false);
 
         /// <summary>
