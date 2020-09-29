@@ -106,7 +106,7 @@ namespace Octopus.CoreParsers.Hcl
         /// <summary>
         /// The index used to access an item in the list
         /// </summary>
-        public static readonly Parser<string> ListIndex = Parse.Regex(@"\[[0-9*]+\]").Named("ListIndex");
+        public static readonly Parser<string> ListIndex = Parse.Regex(@"\[([0-9]+|\*)\]").Named("ListIndex");
 
         /// <summary>
         /// Escaped quote
@@ -211,15 +211,20 @@ namespace Octopus.CoreParsers.Hcl
                 .Except(Parse.Char('['))                // Don't consume the start of an list
                 .Except(Parse.Regex(FunctionStart))        // functions are matched elsewhere
                 .Except(Parse.Char('<').Repeat(2))      // heredoc is not matched here
-            from content in Parse.AnyChar
-                .Except(Parse.Char(LineBreak))
-                .Except(Parse.Regex(@"\s"))
-                .Except(Parse.Char(','))                // Don't consume the comma when used in a list
-                .Except(Parse.Char(')'))                // Don't consume the end of a function call
-                .Except(Parse.Char('}'))                // Don't consume the end of an object
-                .Except(Parse.Char(']'))                // Don't consume the end of an list
-                .Many().Text()
-            select new StringValue(start + content, false);
+            from content in
+                (ListIndex                             // Do consume indexes
+                    .Or(Parse.AnyChar
+                        .Except(Parse.Char(LineBreak))
+                        .Except(Parse.Regex(@"\s"))
+                        .Except(Parse.Char(','))                // Don't consume the comma when used in a list
+                        .Except(Parse.Char(')'))                // Don't consume the end of a function call
+                        .Except(Parse.Char('}'))                // Don't consume the end of an object
+                        .Except(Parse.Char(']'))                // Don't consume the end of an list
+                        .Except(Parse.Char('['))                // Don't consume the start of an list
+                        .Many().Text())
+                    ).Many()
+
+            select new StringValue(start + string.Join(string.Empty, content), false);
 
 
         /// <summary>
