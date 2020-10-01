@@ -61,6 +61,7 @@ namespace Octopus.CoreParsers.Hcl
         [TestCase("[0]")]
         [TestCase("[*]")]
         [TestCase("[99]")]
+        [TestCase("[a.b]")]
         public void ListIndex(string index)
         {
             var result = HclParser.ListIndex.Parse(index);
@@ -68,7 +69,7 @@ namespace Octopus.CoreParsers.Hcl
         }
 
         [Test]
-        [TestCase("[blah]")]
+        [TestCase("[ ]")]
         [TestCase("]")]
         [TestCase("[")]
         [TestCase("[]")]

@@ -106,7 +106,7 @@ namespace Octopus.CoreParsers.Hcl
         /// <summary>
         /// The index used to access an item in the list
         /// </summary>
-        public static readonly Parser<string> ListIndex = Parse.Regex(@"\[((\d|\w|[_\-.])+|\*)\]").Named("ListIndex");
+        public static readonly Parser<string> ListIndex = Parse.Regex(@"\[((\d|\w|[_\-.""])+|\*)\]").Named("ListIndex");
 
         /// <summary>
         /// Escaped quote
@@ -200,7 +200,6 @@ namespace Octopus.CoreParsers.Hcl
             from start in Parse.AnyChar
                 .Except(Parse.Char('"'))
                 .Except(Parse.Char('\''))
-                .Except(Parse.Char(LineBreak))
                 .Except(Parse.Regex(@"\s"))
                 .Except(Parse.Char(','))                // Don't consume the comma when used in a list
                 .Except(Parse.Char(')'))                // Don't consume the end of a function call
@@ -214,15 +213,14 @@ namespace Octopus.CoreParsers.Hcl
                 .Except(Parse.Char('?'))                // don't participate in ternary statements
                 .Except(Parse.Char(':'))                // don't participate in ternary statements
             from content in
-                ListIndex                             // Do consume indexes
+                ListIndex                                         // Do consume indexes
                     .Or(Parse.AnyChar
-                        .Except(Parse.Char(LineBreak))
-                        .Except(Parse.Regex(@"\s"))
-                        .Except(Parse.Char(','))                // Don't consume the comma when used in a list
-                        .Except(Parse.Char(')'))                // Don't consume the end of a function call
-                        .Except(Parse.Char('}'))                // Don't consume the end of an object
-                        .Except(Parse.Char(']'))                // Don't consume the end of an list
-                        .Except(Parse.Char('['))                // Don't consume the start of an list
+                        .Except(Parse.Regex(@"\s"))        // Don't consume whitespace (including newlines)
+                        .Except(Parse.Char(','))               // Don't consume the comma when used in a list
+                        .Except(Parse.Char(')'))               // Don't consume the end of a function call
+                        .Except(Parse.Char('}'))               // Don't consume the end of an object
+                        .Except(Parse.Char(']'))               // Don't consume the end of an list
+                        .Except(Parse.Char('['))               // Don't consume the start of an list
                         .Many().Text())
                     .Or(from mathExpression in StringLiteralUnquotedMathExpressionElement
                         select mathExpression.Value)
@@ -258,7 +256,7 @@ namespace Octopus.CoreParsers.Hcl
                         .Or(Parse.String("||"))
                         .Text()
                         .Token()
-                from rightHandSide in PropertyValue
+                from rightHandSide in PropertyValueUnTokenised
                     .Or(StringLiteralUnquotedContent)
                 select mathOperator + " " + rightHandSide.QuotedValue)
             .Many()
@@ -469,6 +467,28 @@ namespace Octopus.CoreParsers.Hcl
                     .Or(from boolean in Parse.Regex(TrueFalse).Text()
                         select new StringValue(boolean, false))
                 select value).Token();
+
+        /// <summary>
+        /// Matches multiple StringLiteralQuoteContent to make up the string
+        /// </summary>
+        public static readonly Parser<StringValue> StringLiteralQuoteUnTokenised =
+            from start in DelimiterQuote
+            from content in StringLiteralQuoteContent.Many().Optional()
+            from end in DelimiterQuote
+            select new StringValue(string.Concat(content.GetOrDefault()), true);
+
+
+        /// <summary>
+        /// Represents the various values that can be assigned to properties
+        /// i.e. quoted text, numbers and booleans
+        /// </summary>
+        public static readonly Parser<StringValue> PropertyValueUnTokenised =
+            from value in StringLiteralQuoteUnTokenised
+                .Or(from number in Parse.Regex(NumberRegex).Text()
+                    select new StringValue(number, false))
+                .Or(from boolean in Parse.Regex(TrueFalse).Text()
+                    select new StringValue(boolean, false))
+            select value;
 
         public static readonly Parser<StringValue> QuotedOrUnquotedText =
             from text in StringLiteralUnquotedContent
