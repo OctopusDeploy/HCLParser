@@ -237,7 +237,8 @@ namespace Octopus.CoreParsers.Hcl
                 .Except(Parse.Regex(FunctionStart))
                 .Except(Parse.Regex(@"\s"))
             from content in
-                ListIndex                                         // Do consume indexes
+                // consume indexes in an unquoted string
+                ListIndex
                     .Or(SpecialChars
                         .Except(Parse.Regex(@"\s"))
                         .Many().Text())
@@ -452,6 +453,8 @@ namespace Octopus.CoreParsers.Hcl
 
         /// <summary>
         /// Represents the identifiers that are used for names, values and types.
+        /// See the ID_Start and ID_Continue definitions in the HCL code base. We don't strictly match here, as
+        /// ID_Start and ID_Continue are quite complex.
         /// New in 0.12 - identifiers can be wrapped in quote to indicate that the name references a variable
         /// </summary>
         public static readonly Parser<StringValue> Identifier =
