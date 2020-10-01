@@ -1,21 +1,65 @@
 ﻿namespace Octopus.CoreParsers.Hcl
 {
     /// <summary>
-    /// This is used to capture the value of a string, and record if it was quoted or not
+    /// This is used to capture the value of a string, and record if it was quoted, wrapped in parentheses or not.
     /// </summary>
     public class StringValue
     {
-        public bool Quoted { get; }
+        public Wrapper Wrapper { get; }
 
-        public string Quote => Quoted ? "\"" : string.Empty;
+        public string WrapperStart
+        {
+            get
+            {
+                switch (Wrapper)
+                {
+                    case Wrapper.DoubleQuotes:
+                        return "\"";
+                    case Wrapper.Parentheses:
+                        return "(";
+                    default:
+                        return string.Empty;
+                }
+            }
+        }
+
+        public string WrapperEnd
+        {
+            get
+            {
+                switch (Wrapper)
+                {
+                    case Wrapper.DoubleQuotes:
+                        return "\"";
+                    case Wrapper.Parentheses:
+                        return ")";
+                    default:
+                        return string.Empty;
+                }
+            }
+        }
+
         public string Value { get; }
 
-        public string QuotedValue => Quote + Value + Quote;
+        public string OriginalValue => WrapperStart + Value + WrapperEnd;
 
-        public StringValue(string value, bool quoted)
+        public StringValue(string value, Wrapper wrapper)
         {
-            Quoted = quoted;
+            Wrapper = wrapper;
             Value = value;
         }
+
+        public StringValue(string value)
+        {
+            Wrapper = Wrapper.None;
+            Value = value;
+        }
+    }
+
+    public enum Wrapper
+    {
+        None,
+        DoubleQuotes,
+        Parentheses
     }
 }
