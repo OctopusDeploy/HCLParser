@@ -12,7 +12,7 @@ namespace Octopus.CoreParsers.Hcl
         public override string ToString(bool naked, int indent)
         {
             return OriginalName + "(" +
-                   string.Join(", ", Children?.Select(child => child.ToString(0)) ?? Enumerable.Empty<string>()) +
+                   string.Join(", ", Children?.Select(child => child.ToString(indent)) ?? Enumerable.Empty<string>()) +
                    ")";
         }
     }

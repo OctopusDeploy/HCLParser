@@ -165,7 +165,10 @@ namespace Octopus.CoreParsers.Hcl
         /// <returns>The indent string</returns>
         protected string GetIndent(int indent)
         {
-            return new String(' ', indent * 2);
+            return indent >= 0
+                ? new String(' ', indent * 2)
+                : string.Empty;
+
         }
 
         public virtual string ToString(bool naked, int indent)

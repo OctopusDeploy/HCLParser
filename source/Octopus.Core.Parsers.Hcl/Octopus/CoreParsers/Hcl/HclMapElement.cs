@@ -8,13 +8,14 @@ namespace Octopus.CoreParsers.Hcl
     public class HclMapElement : HclElement
     {
         public override string Type => MapType;
-        
+
         public override string ToString(bool naked, int indent)
         {
             var indentString = GetIndent(indent);
-            return indentString + "{\n" +
+            var lineBreak = indent == -1 ? string.Empty : "\n";
+            return indentString + "{" + lineBreak +
                 string.Join("\n", Children?.Select(child => child.ToString(indent + 1)) ?? Enumerable.Empty<string>()) +
-                "\n" + indentString + "}";
+                lineBreak + indentString + "}";
         }
     }
 }

@@ -3,7 +3,8 @@
 namespace Octopus.CoreParsers.Hcl
 {
     /// <summary>
-    /// Represents a string assigned to a property
+    /// Represents an unquoted expression assigned to a property. These can be simple unquoted strings, or
+    /// more complex with function calls, math and ternary statements.
     /// </summary>
     public class HclUnquotedExpressionPropertyElement : HclElement
     {
@@ -18,7 +19,7 @@ namespace Octopus.CoreParsers.Hcl
             }
 
             return indentString + OriginalName + " = " +
-                   string.Join(" ", Children?.Select(child => child.ToString(0)) ?? Enumerable.Empty<string>());
+                   string.Join(" ", Children?.Select(child => child.ToString(-1)) ?? Enumerable.Empty<string>());
         }
     }
 }

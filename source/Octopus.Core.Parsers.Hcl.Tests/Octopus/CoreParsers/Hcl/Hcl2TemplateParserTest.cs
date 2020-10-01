@@ -125,12 +125,44 @@ namespace Octopus.CoreParsers.Hcl
         }
 
         [Test]
+        [TestCase("{\n  \"Name\" = \"${var.network_name}-ip\"\n}")]
+        public void TestMapValue(string index)
+        {
+            var result = HclParser.MapValue.Parse(index);
+            result.ToString().Should().Be(index);
+        }
+
+        [Test]
+        [TestCase("\"Name\" = \"${var.network_name}-ip\"")]
+        public void TestQuotedElementProperty(string index)
+        {
+            var result = HclParser.QuotedElementProperty.Parse(index);
+            result.ToString().Should().Be(index);
+        }
+
+        [Test]
+        [TestCase("${var.network_name}-ip")]
+        public void TestStringLiteralQuote(string index)
+        {
+            var result = HclParser.StringLiteralQuoteContent.Parse(index);
+            result.Should().Be(index);
+        }
+
+        [Test]
+        [TestCase("${var.network_name}-ip")]
+        public void TestStringLiteralQuoteContent(string index)
+        {
+            var result = HclParser.StringLiteralQuoteContent.Parse(index);
+            result.Should().Be(index);
+        }
+
+        [Test]
         [TestCase("locals {\n  tags = merge(\"var.tags\")\n}")]
         [TestCase("locals {\n  tags = merge(\"var.tags1\", \"var.tags2\")\n}")]
         [TestCase("locals {\n  tags = merge(var.tags, {\"Name\" = \"${var.network_name}-ip\"})\n}")]
         [TestCase("locals {\n  tags = merge({\"Name\" = \"${var.network_name}-ip\"})\n}")]
-        [TestCase("locals {\n  depends_on = [\n  aws_s3_bucket.bucket\n]\n}")]
-        public void TestFunctionAssignmentInElement(string index)
+        [TestCase("locals {\n  depends_on = [\n    aws_s3_bucket.bucket\n  ]\n}")]
+        public void TestAssignmentInElement(string index)
         {
             var result = HclParser.NameElement.Parse(index);
             result.ToString().Should().Be(index);
@@ -148,21 +180,6 @@ namespace Octopus.CoreParsers.Hcl
         {
             var result = HclParser.ElementListProperty.Parse(index);
             result.ToString().Should().Be(index);
-        }
-
-        [Test]
-        [TestCase("merge(\"var.tags\")")]
-        public void TestUnquotedString(string index)
-        {
-            try
-            {
-                var result = HclParser.UnquotedContent.Parse(index);
-                Assert.Fail();
-            }
-            catch
-            {
-                // all good
-            }
         }
 
         [Test]
