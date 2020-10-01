@@ -5,7 +5,7 @@ namespace Octopus.CoreParsers.Hcl
 {
     public class HclSetTypeElement : HclElement
     {
-        public override string Type => ObjectPropertyType;
+        public override string Type => SetPropertyType;
 
         public override string ProcessedValue => Value ?? "";
 

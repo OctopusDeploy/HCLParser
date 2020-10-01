@@ -73,11 +73,6 @@ namespace Octopus.CoreParsers.Hcl
         public static readonly Regex FunctionName = new Regex("[a-zA-Z][a-zA-Z0-9]*");
 
         /// <summary>
-        /// A regex to match function definitions
-        /// </summary>
-        public static readonly Regex FunctionStart = new Regex(@"[a-zA-Z][a-zA-Z0-9]*\(");
-
-        /// <summary>
         /// The \n char
         /// </summary>
         public const char LineBreak = (char) 10;
@@ -192,7 +187,7 @@ namespace Octopus.CoreParsers.Hcl
                 .Many().Text().Named("Literal without escape/delimiter character");
 
         /// <summary>
-        /// A string made up of regular text and interoplation string
+        /// A string made up of regular text and interpolation string
         /// </summary>
         public static readonly Parser<string> StringLiteralCurly =
             from start in DelimiterStartInterpolated
@@ -201,7 +196,7 @@ namespace Octopus.CoreParsers.Hcl
                 .Or(EscapedDelimiterEndCurly)
                 .Or(SimpleLiteralCurly).Many()
             from end in DelimiterEndCurly
-            select string.Concat(start) + string.Concat(v) + string.Concat(end);
+            select string.Concat(start, v, end);
 
         /// <summary>
         /// Any characters that are not escaped.
@@ -227,74 +222,6 @@ namespace Octopus.CoreParsers.Hcl
             select curly.GetOrDefault() + Regex.Unescape(string.Concat(content));
 
         /// <summary>
-        /// Matches an unquoted string. New in 0.12
-        /// </summary>
-        public static readonly Parser<StringValue> StringLiteralUnquotedContent =
-            from start in SpecialChars
-                .Except(Parse.Char('.'))
-                .Except(Parse.Char('*'))
-                .Except(Parse.Char('#'))
-                .Except(Parse.Regex(FunctionStart))
-                .Except(Parse.Regex(@"\s"))
-            from content in
-                // consume indexes in an unquoted string
-                ListIndex
-                    .Or(SpecialChars
-                        .Except(Parse.Regex(@"\s"))
-                        .Many().Text())
-                    .Or(from mathExpression in StringLiteralUnquotedMathExpressionElement
-                        select mathExpression.Value)
-                    .Many()
-
-            select new StringValue(start + string.Join(string.Empty, content));
-
-        /// <summary>
-        /// HCL2 is essentially a calculator. It offers arithmetic and logic operators that need to be taken
-        /// into account when processing an unquoted string.
-        ///
-        /// We are not interested in breaking these operators down, so they are simply considered part of
-        /// an unquoted string.
-        ///
-        /// New in 0.12
-        /// </summary>
-        public static readonly Parser<StringValue> StringLiteralUnquotedMathExpressionElement =
-            from operations in
-            (
-                from mathOperator in
-                    Parse.String("*")
-                        .Or(Parse.String("/"))
-                        .Or(Parse.String("%"))
-                        .Or(Parse.String("+"))
-                        .Or(Parse.String("-"))
-                        .Or(Parse.String("<"))
-                        .Or(Parse.String(">"))
-                        .Or(Parse.String(">="))
-                        .Or(Parse.String(">="))
-                        .Or(Parse.String("!="))
-                        .Or(Parse.String("=="))
-                        .Or(Parse.String("&&"))
-                        .Or(Parse.String("||"))
-                        .Text()
-                        .Token()
-                from rightHandSide in PropertyValueUnTokenised
-                    .Or(StringLiteralUnquotedContent)
-                select mathOperator + " " + rightHandSide.OriginalValue)
-            .Many()
-            select new StringValue(" " + string.Join(" ", operations));
-
-        /// <summary>
-        /// Matches function parameter. New in 0.12.
-        /// </summary>
-        public static readonly Parser<string> FunctionParameterUnquotedContent =
-            from openBracket in Parse.Char('[')
-            from content in Parse.AnyChar
-                .Except(Parse.Char(LineBreak))
-                .Except(Parse.Char(']'))
-                .Many().Text()
-            from closeBracket in Parse.Char(']')
-            select openBracket + content + closeBracket;
-
-        /// <summary>
         /// Matches the plain text in a string, or the Interpolation block
         /// </summary>
         public static readonly Parser<string> IfStatement =
@@ -303,7 +230,7 @@ namespace Octopus.CoreParsers.Hcl
             select ifIdentifier + " " + ifStatement;
 
         /// <summary>
-        /// Matches a for loop
+        /// Matches a for loop. New in 0.12
         /// </summary>
         public static readonly Parser<HclForLoopElement> ForLoopObjectValue =
             from curly in DelimiterStartCurly.Token()
@@ -374,16 +301,6 @@ namespace Octopus.CoreParsers.Hcl
             select string.Concat(content);
 
         /// <summary>
-        /// Matches multiple StringLiteralQuoteContent to make up the string
-        /// </summary>
-        public static readonly Parser<StringValue> StringLiteralQuote =
-            (from start in DelimiterQuote
-                from content in StringLiteralQuoteContent.Many().Optional()
-                from end in DelimiterQuote
-                select new StringValue(string.Concat(content.GetOrDefault()), Wrapper.DoubleQuotes)
-            ).Token();
-
-        /// <summary>
         /// Represents a multiline comment e.g.
         /// /*
         /// Some text goes here
@@ -451,119 +368,24 @@ namespace Octopus.CoreParsers.Hcl
             select new HclCommentElement {Value = content.GetOrDefault()}
         ).Token().Named("Single line comment");
 
+        public static readonly Parser<StringValue> IdentifierPlain =
+            from value in Parse.Regex(@"(\d|\w|[_\-.])+").Text().Token()
+            select new StringValue(value);
+
+        /// <summary>
+        /// Identifiers can be wrapped in quotes to indicate their names are variables. New in 0.12
+        /// </summary>
+        public static readonly Parser<StringValue> IdentifierVariable =
+            from value in Parse.Regex(@"\((\d|\w|[_\-.])+\)").Text().Token()
+            select new StringValue(value, Wrapper.Parentheses);
+
         /// <summary>
         /// Represents the identifiers that are used for names, values and types.
         /// See the ID_Start and ID_Continue definitions in the HCL code base. We don't strictly match here, as
         /// ID_Start and ID_Continue are quite complex.
-        /// New in 0.12 - identifiers can be wrapped in quote to indicate that the name references a variable
         /// </summary>
         public static readonly Parser<StringValue> Identifier =
-            from value in Parse.Regex(@"(\d|\w|[_\-.])+|\((\d|\w|[_\-.])+\)").Text().Token()
-            select new StringValue(value, Wrapper.DoubleQuotes);
-
-        /// <summary>
-        /// Represents the identifiers that are used for property names
-        /// According to https://github.com/hashicorp/hcl/blob/ae25c981c128d7a7a5241e3b7d7409089355df69/hcl/scanner/scanner_test.go
-        /// all strings are double quoted.
-        /// </summary>
-        public static readonly Parser<StringValue> PropertyIdentifier =
-            Identifier.Or(StringLiteralQuote).Token();
-
-        /// <summary>
-        /// Represents quoted text
-        /// </summary>
-        public static readonly Parser<string> QuotedText =
-            (from open in DelimiterQuote
-                from content in Parse.CharExcept('"').Many().Text()
-                from close in DelimiterQuote
-                select content).Token();
-
-        /// <summary>
-        /// Represents the various values that can be assigned to properties
-        /// i.e. quoted text, numbers and booleans
-        /// </summary>
-        public static readonly Parser<StringValue> PropertyValue =
-            (from value in StringLiteralQuote
-                    .Or(from number in Parse.Regex(NumberRegex).Text()
-                        select new StringValue(number))
-                    .Or(from boolean in Parse.Regex(TrueFalse).Text()
-                        select new StringValue(boolean))
-                select value).Token();
-
-        /// <summary>
-        /// Matches multiple StringLiteralQuoteContent to make up the string
-        /// </summary>
-        public static readonly Parser<StringValue> StringLiteralQuoteUnTokenised =
-            from start in DelimiterQuote
-            from content in StringLiteralQuoteContent.Many().Optional()
-            from end in DelimiterQuote
-            select new StringValue(string.Concat(content.GetOrDefault()), Wrapper.DoubleQuotes);
-
-
-        /// <summary>
-        /// Represents the various values that can be assigned to properties
-        /// i.e. quoted text, numbers and booleans
-        /// </summary>
-        public static readonly Parser<StringValue> PropertyValueUnTokenised =
-            from value in StringLiteralQuoteUnTokenised
-                .Or(from number in Parse.Regex(NumberRegex).Text()
-                    select new StringValue(number))
-                .Or(from boolean in Parse.Regex(TrueFalse).Text()
-                    select new StringValue(boolean))
-            select value;
-
-        public static readonly Parser<StringValue> QuotedOrUnquotedText =
-            from text in PropertyValue
-                .Or(StringLiteralUnquotedContent)
-            select text;
-
-        /// <summary>
-        /// A ternary statement i.e.
-        /// a ? b : c
-        /// </summary>
-        public static readonly Parser<StringValue> TernaryLogic =
-            (from test in QuotedOrUnquotedText
-                from equalsDelimiter in Parse.String("?").Token()
-                from trueValue in
-                    TernaryLogic
-                        .Or(QuotedOrUnquotedText)
-                from colonDelimiter in Parse.String(":").Token()
-                from falseValue in
-                    TernaryLogic
-                        .Or(QuotedOrUnquotedText)
-                select new StringValue(test.OriginalValue + " ? " + trueValue.OriginalValue + " : " + falseValue.OriginalValue)).Token();
-
-        /// <summary>
-        /// New in 0.12 - An primitive definition
-        /// </summary>
-        public static readonly Parser<HclElement> PrimitiveTypeProperty =
-            (from value in Parse.String("string")
-                    .Or(Parse.String("\"string\""))
-                    .Or(Parse.String("number"))
-                    .Or(Parse.String("\"number\""))
-                    .Or(Parse.String("bool"))
-                    .Or(Parse.String("\"bool\""))
-                    .Or(Parse.String("any"))
-                    .Or(Parse.String("\"any\""))
-                    .Text()
-                select new HclPrimitiveTypeElement {Value = value}).Token();
-
-        /// <summary>
-        /// New in 0.12 - An object definition. Todo: Add comment elements.
-        /// </summary>
-        public static readonly Parser<HclElement> ObjectTypeProperty =
-            (from objectType in Parse.String("object(").Token()
-                from openCurly in LeftCurly
-                from content in
-                (
-                    from value in HclElementTypedObjectProperty
-                        .Or(PrimitiveTypeObjectProperty)
-                    from comma in Comma.Optional()
-                    select value
-                ).Token().Many()
-                from closeCurly in RightCurly
-                from closeBracket in RightBracket
-                select new HclObjectTypeElement {Children = content}).Token();
+            IdentifierPlain.Or(IdentifierVariable);
 
         /// <summary>
         /// New in 0.12 - An set definition
@@ -607,13 +429,154 @@ namespace Octopus.CoreParsers.Hcl
                 }).Token();
 
         /// <summary>
-        /// New in 0.12 - Represent a property holding a type
+        /// Matches an unquoted value. New in 0.12
         /// </summary>
-        public static readonly Parser<HclElement> HclFunctionProperty =
-            (from name in Identifier.Or(StringLiteralQuote)
-                from eql in Equal
-                from value in FunctionCall
-                select new HclTypePropertyElement {Name = name.Value, Children = value.ToEnumerable(), NameQuoted = false}).Token();
+        public static readonly Parser<HclElement> UnquotedContent =
+            // Consume a function call as part of the unquoted content
+            from content in FunctionCall
+                .Or(
+                    // Plain unquoted text must start a valid character
+                    from start in SpecialChars
+                        .Except(Parse.Char('.'))
+                        .Except(Parse.Char('*'))
+                        .Except(HashCommentStart)
+                        .Except(ForwardSlashCommentStart)
+                        .Except(MultilineComment)
+                        .Except(Parse.Regex(@"\s"))
+                    // Plain unquoted text then continues with known characters or sequences
+                    from continueFromStart in ListIndex
+                        .Or(SpecialChars
+                            .Except(Parse.Regex(@"\s"))
+                            .Many().Text()).Many()
+                    // We treat math expressions and nested quoted text as part of this unquoted text
+                    from otherFields in
+                        MathSymbol
+                            .Or(from propertyValue in PropertyValueUntokenised
+                                select new HclStringElement {Value = propertyValue.Value})
+                            .Or(UnquotedContent)
+                            .Many()
+                    select new HclUnquotedExpressionElement
+                    {
+                        Children = new HclUnquotedStringElement {Value = start + string.Join(string.Empty, continueFromStart)}.ToEnumerable()
+                            .Union(otherFields)
+                    }
+                )
+            select content;
+
+        /// <summary>
+        /// Math symbols. New in 0.12
+        /// </summary>
+        public static readonly Parser<HclElement> MathSymbol =
+            from mathOperator in
+                Parse.String("*")
+                    .Or(Parse.String("/"))
+                    .Or(Parse.String("%"))
+                    .Or(Parse.String("+"))
+                    .Or(Parse.String("-"))
+                    .Or(Parse.String("<"))
+                    .Or(Parse.String(">"))
+                    .Or(Parse.String(">="))
+                    .Or(Parse.String(">="))
+                    .Or(Parse.String("!="))
+                    .Or(Parse.String("=="))
+                    .Or(Parse.String("&&"))
+                    .Or(Parse.String("||"))
+                    .Or(Parse.String("?"))
+                    .Or(Parse.String(":"))
+                    .Text()
+                    .Token()
+            select new HclMathSymbol {Value = mathOperator};
+
+        /// <summary>
+        /// Matches multiple StringLiteralQuoteContent to make up the string
+        /// </summary>
+        public static readonly Parser<StringValue> StringLiteralQuoteUntokenised =
+            from start in DelimiterQuote
+            from content in StringLiteralQuoteContent.Many().Optional()
+            from end in DelimiterQuote
+            select new StringValue(string.Concat(content.GetOrDefault()), Wrapper.DoubleQuotes);
+
+        /// <summary>
+        /// Represents the various values that can be assigned to properties
+        /// i.e. quoted text, numbers and booleans
+        /// </summary>
+        public static readonly Parser<StringValue> PropertyValueUntokenised =
+            from value in StringLiteralQuoteUntokenised
+                    .Or(from number in Parse.Regex(NumberRegex).Text()
+                        select new StringValue(number))
+                    .Or(from boolean in Parse.Regex(TrueFalse).Text()
+                        select new StringValue(boolean))
+                select value;
+
+        /// <summary>
+        /// Matches multiple StringLiteralQuoteContent to make up the string
+        /// </summary>
+        public static readonly Parser<StringValue> StringLiteralQuote =
+            (from start in DelimiterQuote
+                from content in StringLiteralQuoteContent.Many().Optional()
+                from end in DelimiterQuote
+                select new StringValue(string.Concat(content.GetOrDefault()), Wrapper.DoubleQuotes)
+            ).Token();
+
+        /// <summary>
+        /// Represents the various values that can be assigned to properties
+        /// i.e. quoted text, numbers and booleans
+        /// </summary>
+        public static readonly Parser<StringValue> PropertyValue =
+            (from value in StringLiteralQuote
+                    .Or(from number in Parse.Regex(NumberRegex).Text()
+                        select new StringValue(number))
+                    .Or(from boolean in Parse.Regex(TrueFalse).Text()
+                        select new StringValue(boolean))
+                select value).Token();
+
+        /// <summary>
+        /// New in 0.12 - An primitive definition without quotes
+        /// </summary>
+        public static readonly Parser<HclElement> UnquotedPrimitiveTypeProperty =
+            (from value in Parse.String("string")
+                    .Or(Parse.String("number"))
+                    .Or(Parse.String("bool"))
+                    .Or(Parse.String("any"))
+                    .Text()
+                select new HclPrimitiveTypeElement {Value = value}).Token();
+
+        /// <summary>
+        /// New in 0.12 - An primitive definition with quotes
+        /// </summary>
+        public static readonly Parser<HclElement> QuotedPrimitiveTypeProperty =
+            (from startQuote in DelimiterQuote
+                    from value in Parse.String("string")
+                        .Or(Parse.String("number"))
+                        .Or(Parse.String("bool"))
+                        .Or(Parse.String("any"))
+                        .Text()
+                    from endQuote in DelimiterQuote
+                select new HclPrimitiveTypeElement {Value = value}).Token();
+
+        /// <summary>
+        /// New in 0.12 - An primitive definition
+        /// </summary>
+        public static readonly Parser<HclElement> PrimitiveTypeProperty =
+            UnquotedPrimitiveTypeProperty
+                .Or(QuotedPrimitiveTypeProperty);
+
+        /// <summary>
+        /// New in 0.12 - An object definition. Todo: Add comment elements.
+        /// </summary>
+        public static readonly Parser<HclElement> ObjectTypeProperty =
+            (from objectType in Parse.String("object(").Token()
+                from openCurly in LeftCurly
+                from content in
+                (
+                    from value in ElementTypedObjectProperty
+                        .Or(PrimitiveTypeObjectProperty)
+                    from comma in Comma.Optional()
+                    select value
+                ).Token().Many()
+                from closeCurly in RightCurly
+                from closeBracket in RightBracket
+                select new HclObjectTypeElement {Children = content}).Token();
 
         /// <summary>
         /// New in 0.12 - An set definition
@@ -678,14 +641,27 @@ namespace Octopus.CoreParsers.Hcl
                 from closeBracket in RightBracket
                 select new HclMapTypeElement {Children = value.ToEnumerable()}).Token();
 
+        /// <summary>
+        /// The value of an individual string, number or boolean item in a list
+        /// </summary>
+        public static readonly Parser<HclElement> LiteralUnquotedListValue =
+            from value in PropertyValue
+            select new HclStringElement {Value = value.Value};
+
+        /// <summary>
+        /// The value of an individual unquoted item in a list
+        /// </summary>
+        public static readonly Parser<HclElement> LiteralListUnquotedValue =
+            from value in UnquotedContent
+            select value;
 
         /// <summary>
         /// The value of an individual item in a list
         /// </summary>
         public static readonly Parser<HclElement> LiteralListValue =
-            from literal in PropertyValue
-                .Or(StringLiteralUnquotedContent)
-            select new HclStringElement {Value = literal.Value};
+            from value in LiteralUnquotedListValue
+                .Or(LiteralListUnquotedValue)
+            select value;
 
         /// <summary>
         /// The value of an individual heredoc item in a list
@@ -740,7 +716,7 @@ namespace Octopus.CoreParsers.Hcl
         public static readonly Parser<HclElement> MapValue =
         (
             from lbracket in LeftCurly
-            from content in HclProperties.Optional()
+            from content in Properties.Optional()
             from rbracket in RightCurly
             select new HclMapElement {Children = content.GetOrDefault()}
         ).Token();
@@ -778,47 +754,43 @@ namespace Octopus.CoreParsers.Hcl
         /// <summary>
         /// Represents a value that can be assigned to a property
         /// </summary>
-        public static readonly Parser<HclElement> HclElementProperty =
+        public static readonly Parser<HclElement> UnquotedNameUnquotedElementProperty =
             from name in Identifier
             from eql in Equal
-            from value in TernaryLogic
-                .Or(PropertyValue)
-                .Or(StringLiteralUnquotedContent)
+            from value in UnquotedContent
+            select new HclUnquotedExpressionPropertyElement {Name = name.Value, Children = value.ToEnumerable(), NameQuoted = false};
+
+        /// <summary>
+        /// Represents a value that can be assigned to a property
+        /// </summary>
+        public static readonly Parser<HclElement> QuotedNameUnquotedElementProperty =
+            from name in StringLiteralQuote
+            from eql in Equal
+            from value in UnquotedContent
+            select new HclUnquotedExpressionPropertyElement {Name = name.Value, Children = value.ToEnumerable(), NameQuoted = true};
+
+        /// <summary>
+        /// Represents a value that can be assigned to a property
+        /// </summary>
+        public static readonly Parser<HclElement> ElementProperty =
+            from name in Identifier
+            from eql in Equal
+            from value in PropertyValue
             select new HclStringPropertyElement {Name = name.Value, Value = value.Value, NameQuoted = false};
 
         /// <summary>
         /// Represents a value that can be assigned to a property
         /// </summary>
-        public static readonly Parser<HclElement> QuotedHclElementProperty =
+        public static readonly Parser<HclElement> QuotedElementProperty =
             from name in StringLiteralQuote
             from eql in Equal
-            from value in TernaryLogic
-                .Or(PropertyValue)
-                .Or(StringLiteralUnquotedContent)
+            from value in PropertyValue
             select new HclStringPropertyElement {Name = name.Value, Value = value.Value, NameQuoted = true};
-
-        /// <summary>
-        /// Represents a function property. New in 0.12
-        /// </summary>
-        public static readonly Parser<HclElement> HclFunctionElementProperty =
-            from name in Identifier
-            from eql in Equal
-            from value in FunctionParameterUnquotedContent
-            select new HclStringPropertyElement {Name = name.Value, Value = value, NameQuoted = false};
-
-        /// <summary>
-        /// Represents a quoted function property. New in 0.12
-        /// </summary>
-        public static readonly Parser<HclElement> QuotedHclFunctionElementProperty =
-            from name in StringLiteralQuote
-            from eql in Equal
-            from value in FunctionParameterUnquotedContent
-            select new HclStringPropertyElement {Name = name.Value, Value = value, NameQuoted = true};
 
         /// <summary>
         /// Represents a multiline string
         /// </summary>
-        public static readonly Parser<HclElement> HclElementMultilineProperty =
+        public static readonly Parser<HclElement> ElementMultilineProperty =
             from name in Identifier
             from eql in Equal
             from value in HereDoc
@@ -850,7 +822,7 @@ namespace Octopus.CoreParsers.Hcl
         /// <summary>
         /// Represents a list property
         /// </summary>
-        public static readonly Parser<HclElement> HclElementListProperty =
+        public static readonly Parser<HclElement> ElementListProperty =
             from name in Identifier.Or(StringLiteralQuote)
             from eql in Equal
             from value in ListValue
@@ -868,7 +840,7 @@ namespace Octopus.CoreParsers.Hcl
         /// <summary>
         /// Represent a map assigned to a named value
         /// </summary>
-        public static readonly Parser<HclElement> HclElementMapProperty =
+        public static readonly Parser<HclElement> ElementMapProperty =
             from name in Identifier.Or(StringLiteralQuote)
             from eql in Equal
             from properties in MapValue
@@ -877,7 +849,7 @@ namespace Octopus.CoreParsers.Hcl
         /// <summary>
         /// New in 0.12 - Represent a for loop generating an object assigned to a property
         /// </summary>
-        public static readonly Parser<HclElement> HclElementForLoopObjectProperty =
+        public static readonly Parser<HclElement> ElementForLoopObjectProperty =
             (from name in Identifier.Or(StringLiteralQuote)
             from eql in Equal
             from properties in ForLoopObjectValue
@@ -886,7 +858,7 @@ namespace Octopus.CoreParsers.Hcl
         /// <summary>
         /// New in 0.12 - Represent a for loop generating an list assigned to a property
         /// </summary>
-        public static readonly Parser<HclElement> HclElementForLoopListProperty =
+        public static readonly Parser<HclElement> ElementForLoopListProperty =
             (from name in Identifier.Or(StringLiteralQuote)
             from eql in Equal
             from value in ForLoopListValue
@@ -895,7 +867,7 @@ namespace Octopus.CoreParsers.Hcl
         /// <summary>
         /// New in 0.12 - Represent a property holding a type
         /// </summary>
-        public static readonly Parser<HclElement> HclElementTypedObjectProperty =
+        public static readonly Parser<HclElement> ElementTypedObjectProperty =
             (from name in Identifier.Or(StringLiteralQuote)
             from eql in Equal
             from value in MapTypeProperty
@@ -915,85 +887,65 @@ namespace Octopus.CoreParsers.Hcl
             select new HclTypePropertyElement {Name = name.Value, Children = value.ToEnumerable(), NameQuoted = false}).Token();
 
         /// <summary>
-        /// Represents a function. New in 0.12. e.g.:
-        /// function "upper" {
-        ///     params = [str]
-        ///     result = upper(str)
-        /// }
-        /// </summary>
-        public static readonly Parser<HclElement> HclFunctionElement =
-            from name in Parse.String("function").Text()
-            from value in Identifier.Or(StringLiteralQuote)
-            from lbracket in LeftCurly
-            from properties in HclElementProperty
-                .Or(QuotedHclElementProperty)
-                .Or(HclFunctionElementProperty)
-                .Or(QuotedHclFunctionElementProperty)
-                .Many()
-                .Optional()
-            from rbracket in RightCurly
-            select new HclElement {Name = name, Value = value.Value, Children = properties.GetOrDefault()};
-
-        /// <summary>
         /// Represents a named element with child properties
         /// </summary>
-        public static readonly Parser<HclElement> HclNameElement =
+        public static readonly Parser<HclElement> NameElement =
             from dynamic in Dynamic.Optional()
             from name in Identifier.Or(StringLiteralQuote)
             from eql in Equal.Optional()
             from lbracket in LeftCurly
-            from properties in HclProperties.Optional()
+            from properties in Properties.Optional()
             from rbracket in RightCurly
             select new HclElement {Name = name.Value, Children = properties.GetOrDefault()};
 
         /// <summary>
         /// Represents a named element with a value and child properties
         /// </summary>
-        public static readonly Parser<HclElement> HclNameValueElement =
+        public static readonly Parser<HclElement> NameValueElement =
             from dynamic in Dynamic.Optional()
             from name in Identifier
             from eql in Equal.Optional()
             from value in Identifier.Or(StringLiteralQuote)
             from lbracket in LeftCurly
-            from properties in HclProperties.Optional()
+            from properties in Properties.Optional()
             from rbracket in RightCurly
             select new HclElement {Name = name.Value, Value = value.Value, Children = properties.GetOrDefault()};
 
         /// <summary>
         /// Represents named elements with values and types. These are things like resources.
         /// </summary>
-        public static readonly Parser<HclElement> HclNameValueTypeElement =
+        public static readonly Parser<HclElement> NameValueTypeElement =
             from dynamic in Dynamic.Optional()
             from name in Identifier
             from value in Identifier.Or(StringLiteralQuote)
             from type in Identifier.Or(StringLiteralQuote)
             from lbracket in LeftCurly
-            from properties in HclProperties.Optional()
+            from properties in Properties.Optional()
             from rbracket in RightCurly
             select new HclElement {Name = name.Value, Value = value.Value, Type = type.Value, Children = properties.GetOrDefault()};
 
         /// <summary>
         /// Represents the properties that can be added to an element
         /// </summary>
-        public static readonly Parser<IEnumerable<HclElement>> HclProperties =
-            (from value in HclNameElement
-                    .Or(HclElementTypedObjectProperty)
-                    .Or(HclFunctionProperty)
+        public static readonly Parser<IEnumerable<HclElement>> Properties =
+            (from value in NameElement
+                    .Or(ElementTypedObjectProperty)
                     .Or(ForLoopObjectValue)
-                    .Or(HclFunctionElement)
-                    .Or(HclNameValueElement)
-                    .Or(HclNameValueTypeElement)
-                    .Or(HclElementProperty)
-                    .Or(QuotedHclElementProperty)
-                    .Or(HclElementListProperty)
+                    .Or(NameValueElement)
+                    .Or(NameValueTypeElement)
+                    .Or(ElementProperty)
+                    .Or(QuotedElementProperty)
+                    .Or(UnquotedNameUnquotedElementProperty)
+                    .Or(QuotedNameUnquotedElementProperty)
+                    .Or(ElementListProperty)
                     .Or(QuotedHclElementListProperty)
-                    .Or(HclElementMapProperty)
-                    .Or(HclElementMultilineProperty)
+                    .Or(ElementMapProperty)
+                    .Or(ElementMultilineProperty)
                     .Or(QuotedHclElementMultilineProperty)
                     .Or(SingleLineComment)
                     .Or(MultilineComment)
-                    .Or(HclElementForLoopObjectProperty)
-                    .Or(HclElementForLoopListProperty)
+                    .Or(ElementForLoopObjectProperty)
+                    .Or(ElementForLoopListProperty)
                 from comma in Comma.Optional()
                 select value).Many().Token();
 
@@ -1002,7 +954,7 @@ namespace Octopus.CoreParsers.Hcl
         /// This is just a collection of child objects.
         /// </summary>
         public static readonly Parser<HclElement> HclTemplate =
-            from children in HclProperties.End()
+            from children in Properties.End()
             select new HclRootElement {Children = children};
 
         /// <summary>
@@ -1023,18 +975,16 @@ namespace Octopus.CoreParsers.Hcl
             .Replace("\t", "\\t")
             .Replace("\v", "\\v")
             .Replace("\"", "\\\"");
-
-
     }
 
-    static class SpracheExtensions
+    static class HclSpracheExtensions
     {
         /// <summary>
         /// An option to Token() which does not consume line breaks
         /// </summary>
         public static Parser<T> WithWhiteSpace<T>(this Parser<T> parser)
         {
-            if (parser == null) throw new ArgumentNullException("parser");
+            if (parser == null) throw new ArgumentNullException(nameof(parser));
 
             return from leading in Parse.WhiteSpace.Except(Parse.Char(HclParser.LineBreak)).Many()
                 from item in parser

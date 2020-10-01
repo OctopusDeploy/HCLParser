@@ -264,7 +264,7 @@ namespace Octopus.CoreParsers.Hcl
         public void QuotedText()
         {
             var template = TerraformLoadTemplate("quotedtext.txt");
-            var parsed = HclParser.HclElementProperty.Parse(template);
+            var parsed = HclParser.ElementProperty.Parse(template);
             parsed.Value.Should().Match("\"altitude-nyc-abcd-2017-stage.storage.googleapis.com\"");
         }
 
@@ -327,7 +327,7 @@ namespace Octopus.CoreParsers.Hcl
         public void ParseMap()
         {
             var template = TerraformLoadTemplate("map.tf");
-            var parsed = HclParser.HclNameValueElement.Parse(template);
+            var parsed = HclParser.NameValueElement.Parse(template);
             parsed.Name.Should().Match("variable");
         }
 
@@ -337,7 +337,7 @@ namespace Octopus.CoreParsers.Hcl
             try
             {
                 var template = TerraformLoadTemplate("map_colon.tf");
-                var parsed = HclParser.HclNameValueElement.Parse(template);
+                var parsed = HclParser.NameValueElement.Parse(template);
                 parsed.Name.Should().Match("variable");
                 throw new Exception("parsing should have failed");
             }
@@ -351,7 +351,7 @@ namespace Octopus.CoreParsers.Hcl
         public void ParseListWithBool()
         {
             var template = TerraformLoadTemplate("ListWithBool.txt");
-            var parsed = HclParser.HclElementListProperty.Parse(template);
+            var parsed = HclParser.ElementListProperty.Parse(template);
             parsed.Name.Should().Match("bool");
         }
 
@@ -359,7 +359,7 @@ namespace Octopus.CoreParsers.Hcl
         public void ParseMapWithListWithBool()
         {
             var template = TerraformLoadTemplate("MapWithListWithBool.txt");
-            var parsed = HclParser.HclElementMapProperty.Parse(template);
+            var parsed = HclParser.ElementMapProperty.Parse(template);
             parsed.Name.Should().Match("permissions");
         }
 
@@ -367,7 +367,7 @@ namespace Octopus.CoreParsers.Hcl
         public void ParseEmptyResource()
         {
             var template = TerraformLoadTemplate("emptyresource.tf");
-            var parsed = HclParser.HclNameValueTypeElement.Parse(template);
+            var parsed = HclParser.NameValueTypeElement.Parse(template);
             parsed.Name.Should().Match("resource");
         }
 
@@ -375,7 +375,7 @@ namespace Octopus.CoreParsers.Hcl
         public void ParseResourceWithChildren()
         {
             var template = TerraformLoadTemplate("resourcewithchildren.tf");
-            var parsed = HclParser.HclNameValueTypeElement.Parse(template);
+            var parsed = HclParser.NameValueTypeElement.Parse(template);
             parsed.Name.Should().Match("resource");
         }
 
@@ -383,7 +383,7 @@ namespace Octopus.CoreParsers.Hcl
         public void ParseResource()
         {
             var template = TerraformLoadTemplate("resource.tf");
-            var parsed = HclParser.HclNameValueTypeElement.Parse(template);
+            var parsed = HclParser.NameValueTypeElement.Parse(template);
             parsed.Name.Should().Match("resource");
         }
 
@@ -407,7 +407,7 @@ namespace Octopus.CoreParsers.Hcl
         public void Basic()
         {
             var template = TerraformLoadTemplate("basic.hcl");
-            var parsed = HclParser.HclProperties.Parse(template).ToList();
+            var parsed = HclParser.Properties.Parse(template).ToList();
             parsed.Should().HaveCount(2);
             parsed.FirstOrDefault(element => "foo" == element.Name).Should().NotBeNull();
             parsed.First(element => "foo" == element.Name).Value.Should().Match("bar");
@@ -419,7 +419,7 @@ namespace Octopus.CoreParsers.Hcl
         public void BasicIntString()
         {
             var template = TerraformLoadTemplate("basic_int_string.hcl");
-            var parsed = HclParser.HclProperties.Parse(template).ToList();
+            var parsed = HclParser.Properties.Parse(template).ToList();
             parsed.Should().HaveCount(1);
             parsed.FirstOrDefault(element => "count" == element.Name).Should().NotBeNull();
             parsed.First(element => "count" == element.Name).Value.Should().Match("3");
@@ -429,7 +429,7 @@ namespace Octopus.CoreParsers.Hcl
         public void BasicSquish()
         {
             var template = TerraformLoadTemplate("basic_squish.hcl");
-            var parsed = HclParser.HclProperties.Parse(template).ToList();
+            var parsed = HclParser.Properties.Parse(template).ToList();
             parsed.Should().HaveCount(3);
             parsed.FirstOrDefault(element => "foo" == element.Name).Should().NotBeNull();
             parsed.First(element => "foo" == element.Name).Value.Should().Match("bar");
@@ -509,7 +509,7 @@ namespace Octopus.CoreParsers.Hcl
         public void Escape()
         {
             var template = TerraformLoadTemplate("escape.hcl");
-            var parsed = HclParser.HclProperties.Parse(template).ToArray();
+            var parsed = HclParser.Properties.Parse(template).ToArray();
             parsed.Should().HaveCount(6);
             parsed.FirstOrDefault(obj => obj.Name == "foo" && obj.Value == "bar\"baz\\n").Should().NotBeNull();
             parsed.FirstOrDefault(obj => obj.Name == "bar" && obj.Value == "new\nline").Should().NotBeNull();
@@ -535,7 +535,7 @@ namespace Octopus.CoreParsers.Hcl
         public void Flat()
         {
             var template = TerraformLoadTemplate("flat.hcl");
-            var parsed = HclParser.HclProperties.Parse(template).ToList();
+            var parsed = HclParser.Properties.Parse(template).ToList();
             parsed.Should().HaveCount(2);
             parsed.FirstOrDefault(obj => obj.Name == "foo" && obj.Value == "bar").Should().NotBeNull();
             parsed.FirstOrDefault(obj => obj.Name == "Key" && obj.Value == "7").Should().NotBeNull();
@@ -555,7 +555,7 @@ namespace Octopus.CoreParsers.Hcl
         public void ListOfLists()
         {
             var template = TerraformLoadTemplate("list_of_lists.hcl");
-            var parsed = HclParser.HclElementListProperty.Parse(template);
+            var parsed = HclParser.ElementListProperty.Parse(template);
             parsed.Children.Should().HaveCount(2);
             parsed.Children.Count(child => child.Children.All(grandchild => grandchild.Value == "foo")).Should().Be(1);
             parsed.Children.Count(child => child.Children.All(grandchild => grandchild.Value == "bar")).Should().Be(1);
@@ -565,7 +565,7 @@ namespace Octopus.CoreParsers.Hcl
         public void ListOfMaps()
         {
             var template = TerraformLoadTemplate("list_of_maps.hcl");
-            var parsed = HclParser.HclElementListProperty.Parse(template);
+            var parsed = HclParser.ElementListProperty.Parse(template);
             parsed.Children.Should().HaveCount(2);
             parsed.Children.Count(child => child.Children.All(grandchild => grandchild.Value == "someval1")).Should().Be(1);
             parsed.Children.Count(child => child.Children.Any(grandchild => grandchild.Value == "someval2")).Should().Be(1);
@@ -576,7 +576,7 @@ namespace Octopus.CoreParsers.Hcl
         public void Multiline()
         {
             var template = TerraformLoadTemplate("multiline.hcl");
-            var parsed = HclParser.HclElementMultilineProperty.Parse(template);
+            var parsed = HclParser.ElementMultilineProperty.Parse(template);
             parsed.Value.Should().Match("\nbar\nbaz\n");
         }
 
@@ -584,7 +584,7 @@ namespace Octopus.CoreParsers.Hcl
         public void MultilineIndented()
         {
             var template = TerraformLoadTemplate("multiline_indented.hcl");
-            var parsed = HclParser.HclElementMultilineProperty.Parse(template);
+            var parsed = HclParser.ElementMultilineProperty.Parse(template);
             parsed.Value.Should().Match("\n        bar\n        baz\n      ");
         }
 
@@ -592,7 +592,7 @@ namespace Octopus.CoreParsers.Hcl
         public void MultilineLiteral()
         {
             var template = TerraformLoadTemplate("multiline_literal.hcl");
-            var parsed = HclParser.HclProperties.Parse(template).ToList();
+            var parsed = HclParser.Properties.Parse(template).ToList();
             parsed.Should().HaveCount(1);
             parsed.First().Name.Should().Match("multiline_literal");
             parsed.First().Value.Should().Match("hello\n  world");
@@ -602,7 +602,7 @@ namespace Octopus.CoreParsers.Hcl
         public void MultilineLiteralHil()
         {
             var template = TerraformLoadTemplate("multiline_literal_with_hil.hcl");
-            var parsed = HclParser.HclProperties.Parse(template).ToList();
+            var parsed = HclParser.Properties.Parse(template).ToList();
             parsed.Should().HaveCount(1);
             parsed.First().Name.Should().Match("multiline_literal_with_hil");
             parsed.First().Value.Should().Match("${hello\n  world}");
@@ -612,7 +612,7 @@ namespace Octopus.CoreParsers.Hcl
         public void MultilineNoEOF()
         {
             var template = TerraformLoadTemplate("multiline_no_eof.hcl");
-            var parsed = HclParser.HclProperties.Parse(template).ToList();
+            var parsed = HclParser.Properties.Parse(template).ToList();
             parsed.Should().HaveCount(2);
             parsed.FirstOrDefault(obj => obj.Name == "foo" && obj.Value == "\nbar\nbaz\n").Should().NotBeNull();
             parsed.FirstOrDefault(obj => obj.Name == "key" && obj.Value == "value").Should().NotBeNull();
@@ -622,7 +622,7 @@ namespace Octopus.CoreParsers.Hcl
         public void MultilineNoHangingIndent()
         {
             var template = TerraformLoadTemplate("multiline_no_hanging_indent.hcl");
-            var parsed = HclParser.HclProperties.Parse(template).ToList();
+            var parsed = HclParser.Properties.Parse(template).ToList();
             parsed.Should().HaveCount(1);
             parsed.FirstOrDefault(obj => obj.Name == "foo" && obj.Value == "\n  baz\n    bar\n      foo\n      ").Should().NotBeNull();
         }
@@ -631,7 +631,7 @@ namespace Octopus.CoreParsers.Hcl
         public void NestedBlockComment()
         {
             var template = TerraformLoadTemplate("nested_block_comment.hcl");
-            var parsed = HclParser.HclProperties.Parse(template).ToList();
+            var parsed = HclParser.Properties.Parse(template).ToList();
             parsed.Should().HaveCount(2);
             parsed.FirstOrDefault(obj => obj.Type == HclElement.CommentType && obj.Value == "\nfoo = \"bar/*\"\n").Should().NotBeNull();
             parsed.FirstOrDefault(obj => obj.Name == "bar" && obj.Value == "value").Should().NotBeNull();
@@ -641,7 +641,7 @@ namespace Octopus.CoreParsers.Hcl
         public void ObjectWithBool()
         {
             var template = TerraformLoadTemplate("object_with_bool.hcl");
-            var parsed = HclParser.HclNameElement.Parse(template);
+            var parsed = HclParser.NameElement.Parse(template);
             parsed.Name.Should().Match("path");
             parsed.Children.Should().HaveCount(2);
             parsed.Children.Should().HaveCount(2);
@@ -655,7 +655,7 @@ namespace Octopus.CoreParsers.Hcl
         public void Scientific()
         {
             var template = TerraformLoadTemplate("scientific.hcl");
-            var parsed = HclParser.HclProperties.Parse(template).ToList();
+            var parsed = HclParser.Properties.Parse(template).ToList();
             parsed.Should().HaveCount(6);
             parsed.FirstOrDefault(obj => obj.Name == "a" && obj.Value == "1e-10").Should().NotBeNull();
             parsed.FirstOrDefault(obj => obj.Name == "b" && obj.Value == "1e+10").Should().NotBeNull();

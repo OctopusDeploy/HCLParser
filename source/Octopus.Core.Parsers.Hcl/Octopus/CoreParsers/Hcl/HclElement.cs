@@ -29,6 +29,16 @@ namespace Octopus.CoreParsers.Hcl
         public const string StringType = "String";
 
         /// <summary>
+        /// The type for an unquoted string or expression
+        /// </summary>
+        public const string UnquotedType = "Unquoted";
+
+        /// <summary>
+        /// The type for a math symbol
+        /// </summary>
+        public const string MathSymbol = "MathSymbol";
+
+        /// <summary>
         /// The type for multiline string
         /// </summary>
         public const string HeredocStringType = "HeredocString";
@@ -234,6 +244,14 @@ namespace Octopus.CoreParsers.Hcl
             return hash;
         }
 
-        protected string EscapeQuotes(string input) => HclParser.StringLiteralQuoteContentReverse.Parse(input);
+        protected string EscapeQuotes(string input)
+        {
+            if (input == null)
+            {
+                throw new ArgumentException("input can not be null");
+            }
+
+            return HclParser.StringLiteralQuoteContentReverse.Parse(input);
+        }
     }
 }

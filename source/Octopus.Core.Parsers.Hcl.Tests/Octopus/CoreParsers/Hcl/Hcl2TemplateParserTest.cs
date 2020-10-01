@@ -86,34 +86,41 @@ namespace Octopus.CoreParsers.Hcl
             }
         }
 
-        [TestCase("var.region == 0 ? data.aws_region.this.name : var.region")]
-        [TestCase("var.region == \"\" ? data.aws_region.this.name : var.region")]
-        [TestCase("var.region == \"\" ? data.aws_region.this.name : a ? b : c")]
-        [TestCase("var.region == \"\" ? data.aws_region.this.name : a ? b : c")]
-        public void TestTernary(string index)
-        {
-            var result = HclParser.TernaryLogic.Parse(index);
-            result.Value.Should().Be(index);
-        }
-
         [TestCase("var.region == \"\"")]
         [TestCase("var.region == blah")]
         [TestCase("var.region == blah + 3 - 2 * 1")]
+        [TestCase("var.manual_deploy_enabled ? \"STOP_DEPLOYMENT\" : \"CONTINUE_DEPLOYMENT\"")]
         public void TestText(string index)
         {
-            var result = HclParser.QuotedOrUnquotedText.Parse(index);
-            result.Value.Should().Be(index);
+            var result = HclParser.UnquotedContent.Parse(index);
+            result.ToString().Should().Be(index);
+        }
+
+        [TestCase("test = var.manual_deploy_enabled ? \"STOP_DEPLOYMENT\" : \"CONTINUE_DEPLOYMENT\"")]
+        [TestCase("template = file(\"task-definitions/covid-portal.json\", \"2\", \"\")")]
+        [TestCase("allocation_id = aws_eip.covidportal_natgw.*.id[count.index]")]
+        public void TestUnquotedElementProperty(string index)
+        {
+            var result = HclParser.UnquotedNameUnquotedElementProperty.Parse(index);
+            result.ToString().Should().Be(index);
+        }
+
+        [TestCase("[\n  var.region\n]")]
+        public void TestUnquotedList(string index)
+        {
+            var result = HclParser.ListValue.Parse(index);
+            result.ToString().Should().Be(index);
         }
 
         [Test]
-        [TestCase("tags = merge(\"var.tags\")")]
-        [TestCase("tags = merge(\"var.tags\", \"blah\")")]
-        [TestCase("tags = merge(\"var.tags\", \"blah\", merge(\"var.tags\", \"blah\"))")]
-        [TestCase("tags = merge(\"var.tags\", {\n  \"Name\" = \"${var.network_name}-ip\"\n})")]
-        [TestCase("tags = merge({\n  \"Name\" = \"${var.network_name}-ip\"\n})")]
+        [TestCase("merge(\"var.tags\")")]
+        [TestCase("merge(\"var.tags\", \"blah\")")]
+        [TestCase("merge(\"var.tags\", \"blah\", merge(\"var.tags\", \"blah\"))")]
+        [TestCase("merge(\"var.tags\", {\n  \"Name\" = \"${var.network_name}-ip\"\n})")]
+        [TestCase("merge({\n  \"Name\" = \"${var.network_name}-ip\"\n})")]
         public void TestFunctionAssignment(string index)
         {
-            var result = HclParser.HclFunctionProperty.Parse(index);
+            var result = HclParser.FunctionCall.Parse(index);
             result.ToString().Should().Be(index);
         }
 
@@ -125,7 +132,7 @@ namespace Octopus.CoreParsers.Hcl
         [TestCase("locals {\n  depends_on = [\n  aws_s3_bucket.bucket\n]\n}")]
         public void TestFunctionAssignmentInElement(string index)
         {
-            var result = HclParser.HclNameElement.Parse(index);
+            var result = HclParser.NameElement.Parse(index);
             result.ToString().Should().Be(index);
         }
 
@@ -139,7 +146,7 @@ namespace Octopus.CoreParsers.Hcl
         [TestCase("depends_on = [\n  aws_s3_bucket.bucket\n]")]
         public void TestListAssignment(string index)
         {
-            var result = HclParser.HclElementListProperty.Parse(index);
+            var result = HclParser.ElementListProperty.Parse(index);
             result.ToString().Should().Be(index);
         }
 
@@ -149,7 +156,7 @@ namespace Octopus.CoreParsers.Hcl
         {
             try
             {
-                var result = HclParser.StringLiteralUnquotedContent.Parse(index);
+                var result = HclParser.UnquotedContent.Parse(index);
                 Assert.Fail();
             }
             catch
@@ -258,7 +265,7 @@ namespace Octopus.CoreParsers.Hcl
         public void ObjectProperty(string file, string result)
         {
             var template = TerraformLoadTemplate(file, HCL2TemplateSamples);
-            var parsed = HclParser.HclElementTypedObjectProperty.Parse(template);
+            var parsed = HclParser.ElementTypedObjectProperty.Parse(template);
             parsed.ToString().Should().Be(result);
         }
     }

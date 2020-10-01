@@ -4,7 +4,7 @@ namespace Octopus.CoreParsers.Hcl
 {
     public class HclTupleTypeElement : HclElement
     {
-        public override string Type => ObjectPropertyType;
+        public override string Type => TuplePropertyType;
 
         public override string ProcessedValue => Value ?? "";
 
