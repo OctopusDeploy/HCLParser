@@ -273,7 +273,10 @@ namespace Octopus.CoreParsers.Hcl
         {
             var template = TerraformLoadTemplate(file, HCL2TemplateSamples);
             var parsed = HclParser.HclTemplate.Parse(template);
-            var reprinted = parsed.ToString();
+            var printed = parsed.ToString();
+            var reparsed = HclParser.HclTemplate.Parse(printed);
+            var reprinted = reparsed.ToString();
+            printed.Should().Be(reprinted);
         }
 
         [Test]
