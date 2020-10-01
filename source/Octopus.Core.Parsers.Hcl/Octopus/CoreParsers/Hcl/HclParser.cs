@@ -246,7 +246,8 @@ namespace Octopus.CoreParsers.Hcl
                 .Text()
             from ifStatement in IfStatement.Optional()
             from endCurly in DelimiterEndCurly.Token()
-            select new HclForLoopElement(curly, endCurly, forVar.Trim(), inValue.Trim(), statements.Trim(), ifStatement.GetOrDefault().Trim());
+            select new HclForLoopElement(curly, endCurly, forVar.Trim(), inValue.Trim(), statements.Trim(),
+                ifStatement.GetOrDefault().Trim());
 
         /// <summary>
         /// Matches a for loop
@@ -259,11 +260,11 @@ namespace Octopus.CoreParsers.Hcl
             from inValue in Parse.AnyChar.Except(Parse.Char(':')).Many().Text()
             from colonIdentifier in Parse.Char(':').Token()
             from statements in ((Parse.AnyChar
-                .Except(Parse.Regex(StartOfIfStatement))
-                .Except(DelimiterEndSquare)
-                .Except(DelimiterStartSquare)
-                .Many().Text())
-                .Or(ListIndex))
+                        .Except(Parse.Regex(StartOfIfStatement))
+                        .Except(DelimiterEndSquare)
+                        .Except(DelimiterStartSquare)
+                        .Many().Text())
+                    .Or(ListIndex))
                 .Many()
             from ifStatement in IfStatement.Optional()
             from endBracket in DelimiterEndSquare.Token()
@@ -421,7 +422,8 @@ namespace Octopus.CoreParsers.Hcl
                 select new HclFunctionElement
                 {
                     Name = funcName,
-                    Children = (firstItems.GetOrDefault() ?? Enumerable.Empty<HclElement>()).Union(lastItem.ToEnumerable())
+                    Children =
+                        (firstItems.GetOrDefault() ?? Enumerable.Empty<HclElement>()).Union(lastItem.ToEnumerable())
                 }).Token();
 
         /// <summary>
@@ -447,13 +449,13 @@ namespace Octopus.CoreParsers.Hcl
                     // We treat math expressions and nested quoted text as part of this unquoted text
                     from otherFields in
                         MathSymbol
-                            .Or(from propertyValue in PropertyValueUntokenised
-                                select new HclStringElement {Value = propertyValue})
+                            .Or(PropertyValueUntokenised)
                             .Or(UnquotedContent)
                             .Many()
                     select new HclUnquotedExpressionElement
                     {
-                        Children = new HclUnquotedStringElement {Value = start + string.Join(string.Empty, continueFromStart)}.ToEnumerable()
+                        Children = new HclUnquotedStringElement
+                                {Value = start + string.Join(string.Empty, continueFromStart)}.ToEnumerable()
                             .Union(otherFields)
                     }
                 )
@@ -496,12 +498,14 @@ namespace Octopus.CoreParsers.Hcl
         /// Represents the various values that can be assigned to properties
         /// i.e. quoted text, numbers and booleans
         /// </summary>
-        public static readonly Parser<string> PropertyValueUntokenised =
-            from value in StringLiteralQuoteUntokenised
+        public static readonly Parser<HclElement> PropertyValueUntokenised =
+            from value in
+                (from str in StringLiteralQuoteUntokenised
+                    select new HclStringElement{Value=str} as HclElement)
                     .Or(from number in Parse.Regex(NumberRegex).Text()
-                        select number)
+                        select new HclNumOrBoolElement{Value=number})
                     .Or(from boolean in Parse.Regex(TrueFalse).Text()
-                        select boolean)
+                        select new HclNumOrBoolElement{Value=boolean})
                 select value;
 
         /// <summary>
@@ -518,12 +522,13 @@ namespace Octopus.CoreParsers.Hcl
         /// Represents the various values that can be assigned to properties
         /// i.e. quoted text, numbers and booleans
         /// </summary>
-        public static readonly Parser<string> PropertyValue =
-            (from value in StringLiteralQuote
+        public static readonly Parser<HclElement> PropertyValue =
+            (from value in (from str in StringLiteralQuote
+                        select new HclStringElement{Value=str} as HclElement)
                     .Or(from number in Parse.Regex(NumberRegex).Text()
-                        select number)
+                        select new HclNumOrBoolElement{Value=number})
                     .Or(from boolean in Parse.Regex(TrueFalse).Text()
-                        select boolean)
+                        select new HclNumOrBoolElement{Value=boolean})
                 select value).Token();
 
         /// <summary>
@@ -586,7 +591,7 @@ namespace Octopus.CoreParsers.Hcl
                     .Or(TupleTypeProperty)
                     .Or(PrimitiveTypeProperty)
                 from closeBracket in RightBracket
-                select new HclSetTypeElement {Children = value.ToEnumerable()}).Token();
+                select new HclSetTypeElement {Child = value}).Token();
 
         /// <summary>
         /// New in 0.12 - An list definition
@@ -600,7 +605,7 @@ namespace Octopus.CoreParsers.Hcl
                     .Or(TupleTypeProperty)
                     .Or(PrimitiveTypeProperty)
                 from closeBracket in RightBracket
-                select new HclListTypeElement{Children = value.ToEnumerable()}).Token();
+                select new HclListTypeElement{Child = value}).Token();
 
         /// <summary>
         /// New in 0.12 - An tuple definition.
@@ -635,28 +640,14 @@ namespace Octopus.CoreParsers.Hcl
                     .Or(TupleTypeProperty)
                     .Or(PrimitiveTypeProperty)
                 from closeBracket in RightBracket
-                select new HclMapTypeElement {Children = value.ToEnumerable()}).Token();
-
-        /// <summary>
-        /// The value of an individual string, number or boolean item in a list
-        /// </summary>
-        public static readonly Parser<HclElement> LiteralUnquotedListValue =
-            from value in PropertyValue
-            select new HclStringElement {Value = value};
-
-        /// <summary>
-        /// The value of an individual unquoted item in a list
-        /// </summary>
-        public static readonly Parser<HclElement> LiteralListUnquotedValue =
-            from value in UnquotedContent
-            select value;
+                select new HclMapTypeElement {Child = value}).Token();
 
         /// <summary>
         /// The value of an individual item in a list
         /// </summary>
         public static readonly Parser<HclElement> LiteralListValue =
-            from value in LiteralUnquotedListValue
-                .Or(LiteralListUnquotedValue)
+            from value in PropertyValue
+                .Or(UnquotedContent)
             select value;
 
         /// <summary>
@@ -754,7 +745,7 @@ namespace Octopus.CoreParsers.Hcl
             from name in Identifier
             from eql in Equal
             from value in UnquotedContent
-            select new HclUnquotedExpressionPropertyElement {Name = name, Children = value.ToEnumerable(), NameQuoted = false};
+            select new HclUnquotedExpressionPropertyElement {Name = name, Child = value, NameQuoted = false};
 
         /// <summary>
         /// Represents a value that can be assigned to a property
@@ -763,7 +754,7 @@ namespace Octopus.CoreParsers.Hcl
             from name in StringLiteralQuote
             from eql in Equal
             from value in UnquotedContent
-            select new HclUnquotedExpressionPropertyElement {Name = name, Children = value.ToEnumerable(), NameQuoted = true};
+            select new HclUnquotedExpressionPropertyElement {Name = name, Child = value, NameQuoted = true};
 
         /// <summary>
         /// Represents a value that can be assigned to a property
@@ -772,7 +763,7 @@ namespace Octopus.CoreParsers.Hcl
             from name in Identifier
             from eql in Equal
             from value in PropertyValue
-            select new HclStringPropertyElement {Name = name, Value = value, NameQuoted = false};
+            select new HclSimplePropertyElement {Name = name, Child = value, NameQuoted = false};
 
         /// <summary>
         /// Represents a value that can be assigned to a property
@@ -781,7 +772,7 @@ namespace Octopus.CoreParsers.Hcl
             from name in StringLiteralQuote
             from eql in Equal
             from value in PropertyValue
-            select new HclStringPropertyElement {Name = name, Value = value, NameQuoted = true};
+            select new HclSimplePropertyElement {Name = name, Child = value, NameQuoted = true};
 
         /// <summary>
         /// Represents a multiline string
@@ -871,7 +862,7 @@ namespace Octopus.CoreParsers.Hcl
                 .Or(ListTypeProperty)
                 .Or(SetTypeProperty)
                 .Or(TupleTypeProperty)
-            select new HclTypePropertyElement {Name = name, Children = value.ToEnumerable(), NameQuoted = false}).Token();
+            select new HclTypePropertyElement {Name = name, Child = value, NameQuoted = false}).Token();
 
         /// <summary>
         /// New in 0.12 - An plain type definition
@@ -880,7 +871,7 @@ namespace Octopus.CoreParsers.Hcl
             (from name in Identifier.Or(StringLiteralQuote)
             from eql in Equal
             from value in PrimitiveTypeProperty
-            select new HclTypePropertyElement {Name = name, Children = value.ToEnumerable(), NameQuoted = false}).Token();
+            select new HclTypePropertyElement {Name = name, Child = value, NameQuoted = false}).Token();
 
         /// <summary>
         /// Represents a named element with child properties

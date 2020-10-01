@@ -8,7 +8,7 @@ namespace Octopus.CoreParsers.Hcl
     /// </summary>
     public class HclUnquotedExpressionPropertyElement : HclElement
     {
-        public override string Type => StringPropertyType;
+        public override string Type => SimplePropertyType;
 
         public override string ToString(bool naked, int indent)
         {

@@ -8,7 +8,7 @@ namespace Octopus.CoreParsers.Hcl
     /// </summary>
     public class HclObjectTypeElement : HclElement
     {
-        public override string Type => MapPropertyType;
+        public override string Type => ObjectPropertyType;
 
         public override string ToString(bool naked, int indent)
         {

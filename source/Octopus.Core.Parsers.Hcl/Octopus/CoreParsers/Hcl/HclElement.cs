@@ -29,6 +29,11 @@ namespace Octopus.CoreParsers.Hcl
         public const string StringType = "String";
 
         /// <summary>
+        /// The type for string, number and boolean elements
+        /// </summary>
+        public const string NumOrBool = "NumOrBool";
+
+        /// <summary>
         /// The type for an unquoted string or expression
         /// </summary>
         public const string UnquotedType = "Unquoted";
@@ -61,7 +66,7 @@ namespace Octopus.CoreParsers.Hcl
         /// <summary>
         /// The type for string, number and boolean elements
         /// </summary>
-        public const string StringPropertyType = "StringProperty";
+        public const string SimplePropertyType = "SimpleProperty";
 
         /// <summary>
         /// The type for string, number and boolean elements
@@ -153,6 +158,15 @@ namespace Octopus.CoreParsers.Hcl
         /// Any child elements
         /// </summary>
         public virtual IEnumerable<HclElement> Children { get; set; }
+
+        /// <summary>
+        /// A conveninece method to treat the Children collection as a single child
+        /// </summary>
+        public virtual HclElement Child
+        {
+            get => Children?.FirstOrDefault();
+            set => Children = value?.ToEnumerable();
+        }
 
         public HclElement()
         {
