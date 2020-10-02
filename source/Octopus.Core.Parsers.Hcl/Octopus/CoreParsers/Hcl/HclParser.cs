@@ -259,7 +259,7 @@ namespace Octopus.CoreParsers.Hcl
                         .Except(DelimiterEndSquare)
                         .Except(DelimiterStartSquare)
                         .Many().Text())
-                    .Or(ListValueText))
+                    .Or(ListOrIndexText))
                 .Many()
             from ifStatement in IfStatement.Optional()
             from endBracket in DelimiterEndSquare.Token()
@@ -380,104 +380,48 @@ namespace Octopus.CoreParsers.Hcl
             select value;
 
         /// <summary>
-        /// New in 0.12 - An function definition
-        /// </summary>
-        public static readonly Parser<HclElement> FunctionCall =
-            (from funcName in Parse.Regex(FunctionName)
-                from bracket in LeftBracket
-                from firstItems in
-                (
-                    from embeddedValues in
-                        Parse.Ref(() =>
-                            FunctionCall
-                                .Or(ListValue)
-                                .Or(MapValue)
-                                .Or(LiteralListValue)
-                                .Or(HereDocListValue)
-                                .Or(SingleLineComment)
-                                .Or(MultilineComment))
-                    from comma in Comma.Optional()
-                    select embeddedValues
-                ).Token().Many().Optional()
-                from closeBracket in RightBracket
-                select new HclFunctionElement
-                {
-                    Name = funcName,
-                    Children = firstItems.GetOrDefault() ?? Enumerable.Empty<HclElement>()
-                }).Token();
-
-        /// <summary>
         /// Represents an indexer in an unquoted string. e.g. a = myvar[b]
         /// This is lenient, consuming everything between balanced square brackets.
         /// </summary>
-        public static readonly Parser<string> ListValueText =
+        public static readonly Parser<string> ListOrIndexText =
             from open in Parse.Char('[')
             from content in
                 (Parse.AnyChar
                     .Except(Parse.Char('['))
                     .Except(Parse.Char(']'))
-                    .Except(Parse.Char(LineBreak))
                     .Many().Text()
-                    .Or(ListValueText)).Many()
+                    .Or(ListOrIndexText)).Many()
             from close in Parse.Char(']')
             select open + string.Join(string.Empty, content) + close;
 
         public static readonly Parser<string> GroupText =
-            from open in Parse.Char('(')
+            from open in Parse.Char('(').Token()
             from content in
-                (Parse.AnyChar
+                MathSymbol
+                    .Or(Parse.AnyChar
                     .Except(Parse.Char('('))
                     .Except(Parse.Char(')'))
-                    .Many().Text()
-                    .Or(GroupText)).Many()
+                    .Many().Text())
+                    .Or(GroupText).Many()
             from close in Parse.Char(')')
             select open + string.Join(string.Empty, content) + close;
 
-        /// <summary>
-        /// Matches an unquoted value. New in 0.12
-        /// </summary>
-        public static readonly Parser<HclElement> UnquotedContent =
-            // Consume a function call as part of the unquoted content
+        public static readonly Parser<string> CurlyGroupText =
+            from open in Parse.Char('{').Token()
             from content in
-                // capture a function and its parameters
-                FunctionCall
-                    // capture a grouped statement
-                    .Or(from groupedText in GroupText select new HclUnquotedStringElement{Value=groupedText})
-                    .Or(
-                        // Plain unquoted text must start a valid character
-                        from start in SpecialChars
-                            .Except(Parse.Char('.'))
-                            .Except(Parse.Char('*'))
-                            .Except(HashCommentStart)
-                            .Except(ForwardSlashCommentStart)
-                            .Except(MultilineComment)
-                            .Except(Parse.Regex(@"\s"))
-                        // Plain unquoted text then continues with known characters or sequences
-                        from continueFromStart in ListValueText
-                            .Or(SpecialChars
-                                .Except(Parse.Regex(@"\s"))
-                                .Many().Text()).Many()
-                        // We treat math expressions and nested quoted text as part of this unquoted text
-                        from otherFields in
-                            MathSymbol
-                                .Or(PropertyValueUntokenised)
-                                .Or(from list in ListValueText select new HclUnquotedStringElement{Value=list})    // Todo - should this be a real list?
-                                .Or(UnquotedContent)
-
-                                .Many()
-                        select new HclUnquotedExpressionElement
-                        {
-                            Children = new HclUnquotedStringElement
-                                    {Value = start + string.Join(string.Empty, continueFromStart)}.ToEnumerable()
-                                .Union(otherFields)
-                        }
-                    )
-            select content;
+                MathSymbol
+                    .Or(Parse.AnyChar
+                        .Except(Parse.Char('{'))
+                        .Except(Parse.Char('}'))
+                        .Many().Text())
+                    .Or(GroupText).Many()
+            from close in Parse.Char('}')
+            select open + string.Join(string.Empty, content) + close;
 
         /// <summary>
         /// Math symbols. New in 0.12
         /// </summary>
-        public static readonly Parser<HclElement> MathSymbol =
+        public static readonly Parser<string> MathSymbol =
             from mathOperator in
                 Parse.String("*")
                     .Or(Parse.String("/"))
@@ -496,30 +440,71 @@ namespace Octopus.CoreParsers.Hcl
                     .Or(Parse.String(":"))
                     .Text()
                     .Token()
-            select new HclMathSymbol {Value = mathOperator};
+            select mathOperator;
 
         /// <summary>
-        /// Matches multiple StringLiteralQuoteContent to make up the string
+        /// Matches an unquoted value. New in 0.12
         /// </summary>
-        public static readonly Parser<string> StringLiteralQuoteUntokenised =
+        public static readonly Parser<HclElement> UnquotedContent =
+            /*
+             * An unquoted string must begin with any character expect for a quote (which would make it a quoted string),
+             * a square bracket (which would make it a list) or a curly bracket (which would make it a map), a less
+             * than (which would make it a HereDoc), or hash (which would make it a comment), or whitespace (which is
+             * not significant at the start of the string).
+             */
+            from start in Parse.AnyChar
+                .Except(Parse.Char('['))
+                .Except(Parse.Char(']'))
+                .Except(Parse.Char('{'))
+                .Except(Parse.Char('}'))
+                .Except(Parse.Char('<'))
+                .Except(Parse.Char('#'))
+                .Except(Parse.Char('"'))
+                .Except(Parse.Regex(@"\s"))
+            /*
+             * Once we enter an unquoted string, we need to understand where the content ends.
+             * We assume any opening bracket will have a matching closing bracket, and consume everything (line breaks
+             * included) between them. We also assume that any math symbol can have the right hand side on a new line.
+             *
+             * We also don't consume commas, which only make sense inside a list.
+             *
+             * However most of these excluded chars can be included in a quoted string via the StringLiteralQuoteUnTokenised
+             * parser.
+             */
+            from content in
+                Parse.AnyChar
+                    .Except(Parse.Char('['))
+                    .Except(Parse.Char(']'))
+                    .Except(Parse.Char('{'))
+                    .Except(Parse.Char('}'))
+                    .Except(Parse.Char('('))
+                    .Except(Parse.Char(')'))
+                    .Except(Parse.Char(','))
+                    .Except(Parse.Char('"'))
+                    .Except(Parse.Char(LineBreak))
+                        .Many()
+                        .Text()
+                    .Or(ListOrIndexText)
+                    .Or(CurlyGroupText)
+                    .Or(GroupText)
+                    .Or(MathSymbol)
+                    .Or(StringLiteralQuoteUnTokenised)
+                    .Many()
+                    .Optional()
+            select new HclUnquotedExpressionElement
+            {
+                Value = start + string.Join("", content.GetOrDefault() ?? Enumerable.Empty<string>())
+            };
+
+        /// <summary>
+        /// Match quoted string content, and inclde the quotes in the result
+        /// </summary>
+        public static readonly Parser<string> StringLiteralQuoteUnTokenised =
             from start in DelimiterQuote
             from content in StringLiteralQuoteContent.Many().Optional()
             from end in DelimiterQuote
-            select string.Concat(content.GetOrDefault());
+            select "\"" + string.Concat(content.GetOrDefault()) + "\"";
 
-        /// <summary>
-        /// Represents the various values that can be assigned to properties
-        /// i.e. quoted text, numbers and booleans
-        /// </summary>
-        public static readonly Parser<HclElement> PropertyValueUntokenised =
-            from value in
-                (from str in StringLiteralQuoteUntokenised
-                    select new HclStringElement{Value=str} as HclElement)
-                    .Or(from number in Parse.Regex(NumberRegex).Text()
-                        select new HclNumOrBoolElement{Value=number})
-                    .Or(from boolean in Parse.Regex(TrueFalse).Text()
-                        select new HclNumOrBoolElement{Value=boolean})
-                select value;
 
         /// <summary>
         /// Matches multiple StringLiteralQuoteContent to make up the string

@@ -84,18 +84,6 @@ namespace Octopus.CoreParsers.Hcl
         }
 
         [Test]
-        [TestCase("merge(\"var.tags\")")]
-        [TestCase("merge(\"var.tags\", \"blah\")")]
-        [TestCase("merge(\"var.tags\", \"blah\", merge(\"var.tags\", \"blah\"))")]
-        [TestCase("merge(\"var.tags\", {\n  \"Name\" = \"${var.network_name}-ip\"\n})")]
-        [TestCase("merge({\n  \"Name\" = \"${var.network_name}-ip\"\n})")]
-        public void TestFunctionAssignment(string index)
-        {
-            var result = HclParser.FunctionCall.Parse(index);
-            result.ToString().Should().Be(index);
-        }
-
-        [Test]
         [TestCase("{\n  \"Name\" = \"${var.network_name}-ip\"\n}")]
         public void TestMapValue(string index)
         {
@@ -136,13 +124,6 @@ namespace Octopus.CoreParsers.Hcl
         public void TestAssignmentInElement(string index)
         {
             var result = HclParser.NameElement.Parse(index);
-            result.ToString().Should().Be(index);
-        }
-
-        [TestCase("merge(\"var.tags\", \"blah\")")]
-        public void TestFunctionCall(string index)
-        {
-            var result = HclParser.FunctionCall.Parse(index);
             result.ToString().Should().Be(index);
         }
 
