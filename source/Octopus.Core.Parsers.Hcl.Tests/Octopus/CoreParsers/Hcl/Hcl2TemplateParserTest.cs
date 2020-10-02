@@ -203,7 +203,10 @@ namespace Octopus.CoreParsers.Hcl
         {
             var template = TerraformLoadTemplate(file, HCL2TemplateSamples);
             var parsed = HclParser.HclTemplate.Parse(template);
-            var reprinted = parsed.ToString();
+            var printed = parsed.ToString();
+            var reparsed = HclParser.HclTemplate.Parse(printed);
+            var reprinted = reparsed.ToString();
+            printed.Should().Be(reprinted);
         }
 
         /// <summary>
@@ -295,6 +298,56 @@ namespace Octopus.CoreParsers.Hcl
         [TestCase("hcl2githubexample48.tf")]
         [TestCase("hcl2githubexample49.tf")]
         [TestCase("hcl2githubexample50.tf")]
+        [TestCase("hcl2githubexample51.tf")]
+        [TestCase("hcl2githubexample52.tf")]
+        [TestCase("hcl2githubexample53.tf")]
+        [TestCase("hcl2githubexample54.tf")]
+        [TestCase("hcl2githubexample55.tf")]
+        [TestCase("hcl2githubexample56.tf")]
+        [TestCase("hcl2githubexample57.tf")]
+        [TestCase("hcl2githubexample58.tf")]
+        [TestCase("hcl2githubexample59.tf")]
+        [TestCase("hcl2githubexample60.tf")]
+        [TestCase("hcl2githubexample61.tf")]
+        [TestCase("hcl2githubexample62.tf")]
+        [TestCase("hcl2githubexample63.tf")]
+        [TestCase("hcl2githubexample64.tf")]
+        [TestCase("hcl2githubexample65.tf")]
+        [TestCase("hcl2githubexample66.tf")]
+        [TestCase("hcl2githubexample67.tf")]
+        [TestCase("hcl2githubexample68.tf")]
+        [TestCase("hcl2githubexample69.tf")]
+        [TestCase("hcl2githubexample70.tf")]
+        [TestCase("hcl2githubexample71.tf")]
+        [TestCase("hcl2githubexample72.tf")]
+        [TestCase("hcl2githubexample73.tf")]
+        [TestCase("hcl2githubexample74.tf")]
+        [TestCase("hcl2githubexample75.tf")]
+        [TestCase("hcl2githubexample76.tf")]
+        [TestCase("hcl2githubexample77.tf")]
+        [TestCase("hcl2githubexample78.tf")]
+        [TestCase("hcl2githubexample79.tf")]
+        [TestCase("hcl2githubexample80.tf")]
+        [TestCase("hcl2githubexample81.tf")]
+        [TestCase("hcl2githubexample82.tf")]
+        [TestCase("hcl2githubexample83.tf")]
+        [TestCase("hcl2githubexample84.tf")]
+        [TestCase("hcl2githubexample85.tf")]
+        [TestCase("hcl2githubexample86.tf")]
+        [TestCase("hcl2githubexample87.tf")]
+        [TestCase("hcl2githubexample88.tf")]
+        [TestCase("hcl2githubexample89.tf")]
+        [TestCase("hcl2githubexample90.tf")]
+        [TestCase("hcl2githubexample91.tf")]
+        [TestCase("hcl2githubexample92.tf")]
+        [TestCase("hcl2githubexample93.tf")]
+        [TestCase("hcl2githubexample94.tf")]
+        [TestCase("hcl2githubexample95.tf")]
+        [TestCase("hcl2githubexample96.tf")]
+        [TestCase("hcl2githubexample97.tf")]
+        [TestCase("hcl2githubexample98.tf")]
+        [TestCase("hcl2githubexample99.tf")]
+        [TestCase("hcl2githubexample100.tf")]
         public void RandomGitHubExamples(string file)
         {
             var template = TerraformLoadTemplate(file, HCL2TemplateSamples);
