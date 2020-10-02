@@ -57,35 +57,6 @@ namespace Octopus.CoreParsers.Hcl
             parsed.Should().Be("if s.namespace == \"aws:ec2:vpc\"");
         }
 
-        [Test]
-        [TestCase("[0]")]
-        [TestCase("[*]")]
-        [TestCase("[99]")]
-        [TestCase("[a.b]")]
-        public void ListIndex(string index)
-        {
-            var result = HclParser.ListIndex.Parse(index);
-            result.Should().Be(index);
-        }
-
-        [Test]
-        [TestCase("[ ]")]
-        [TestCase("]")]
-        [TestCase("[")]
-        [TestCase("[]")]
-        public void ListIndexFail(string index)
-        {
-            try
-            {
-                HclParser.ListIndex.Parse(index);
-                Assert.Fail("Parsing should have failed");
-            }
-            catch
-            {
-                // all good
-            }
-        }
-
         [TestCase("var.region == \"\"")]
         [TestCase("var.region == blah")]
         [TestCase("var.region == blah + 3 - 2 * 1")]

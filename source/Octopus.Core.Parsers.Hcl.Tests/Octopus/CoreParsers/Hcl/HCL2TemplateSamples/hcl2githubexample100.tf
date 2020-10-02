@@ -1,190 +1,108 @@
-﻿terraform {
-  required_version = ">= 0.12"
+﻿locals {
+  # annoyingly it doesn't seem to work if I replace this with keys(module.vpc.subnets)
+  # actually it does once setup the first time, but not when bootstrapping
+  # Will work with HCL2 in version 12 of terraform
+  # TODO https://github.com/hashicorp/terraform/issues/16712
+  subnet_types = ["instance", "public", "private"]
 }
 
+resource "aws_ssm_parameter" "instance_subnets" {
+  name        = "/${var.app_name}/${terraform.workspace}/vpc/subnets/instance"
+  description = "The ${var.app_name}'s vpc's instance subnets"
+  type        = "StringList"
 
-resource "aws_autoscaling_group" "autoscaling_group" {
-  name_prefix = var.cluster_name
-
-  launch_configuration = aws_launch_configuration.launch_configuration.name
-
-  availability_zones  = var.availability_zones
-  vpc_zone_identifier = var.subnet_ids
-
-  # Run a fixed number of instances in the ASG
-  min_size             = var.cluster_size
-  max_size             = var.cluster_size
-  desired_capacity     = var.cluster_size
-  termination_policies = [var.termination_policies]
-
-  health_check_type         = var.health_check_type
-  health_check_grace_period = var.health_check_grace_period
-  wait_for_capacity_timeout = var.wait_for_capacity_timeout
-  service_linked_role_arn   = var.service_linked_role_arn
-
-  enabled_metrics = var.enabled_metrics
-
-  tags = flatten(
-  [
-    {
-      key                 = "Name"
-      value               = var.cluster_name
-      propagate_at_launch = true
-    },
-    {
-      key                 = var.cluster_tag_key
-      value               = var.cluster_tag_value
-      propagate_at_launch = true
-    },
-    var.tags,
-  ]
+  value = join(
+  ",",
+  slice(
+  concat(aws_subnet.private.*.id, aws_subnet.public.*.id),
+  var.create_private ? 0 : length(aws_subnet.private.*.id),
+  var.create_private ? length(aws_subnet.private.*.id) : length(aws_subnet.private.*.id) + length(aws_subnet.public.*.id),
+  ),
   )
-}
 
-# ---------------------------------------------------------------------------------------------------------------------
-# CREATE LAUNCH CONFIGURATION TO DEFINE WHAT RUNS ON EACH INSTANCE IN THE ASG
-# ---------------------------------------------------------------------------------------------------------------------
+  overwrite = "true"
 
-resource "aws_launch_configuration" "launch_configuration" {
-  name_prefix   = "${var.cluster_name}-"
-  image_id      = var.ami_id
-  instance_type = var.instance_type
-  user_data     = var.user_data
-  spot_price    = var.spot_price
-
-  iam_instance_profile = var.enable_iam_setup ? element(
-  concat(aws_iam_instance_profile.instance_profile.*.name, [""]),
-  0,
-  ) : var.iam_instance_profile_name
-  key_name = var.ssh_key_name
-
-  security_groups = concat(
-  [aws_security_group.lc_security_group.id],
-  var.additional_security_group_ids,
-  )
-  placement_tenancy           = var.tenancy
-  associate_public_ip_address = var.associate_public_ip_address
-
-  ebs_optimized = var.root_volume_ebs_optimized
-
-  root_block_device {
-    volume_type           = var.root_volume_type
-    volume_size           = var.root_volume_size
-    delete_on_termination = var.root_volume_delete_on_termination
-  }
-
-  lifecycle {
-    create_before_destroy = true
+  tags = {
+    app_name  = var.app_name
+    workspace = terraform.workspace
   }
 }
 
-resource "aws_security_group" "lc_security_group" {
-  name_prefix = var.cluster_name
-  description = "Security group for the ${var.cluster_name} launch configuration"
-  vpc_id      = var.vpc_id
+resource "aws_ssm_parameter" "public_subnets" {
+  name        = "/${var.app_name}/${terraform.workspace}/vpc/subnets/public"
+  description = "The ${var.app_name}'s vpc's public subnets"
+  type        = "StringList"
+  value       = join(",", aws_subnet.public.*.id)
+  overwrite   = "true"
 
-  lifecycle {
-    create_before_destroy = true
-  }
-
-  tags = merge(
-  {
-    "Name" = var.cluster_name
-  },
-  var.security_group_tags,
-  )
-}
-
-resource "aws_security_group_rule" "allow_ssh_inbound" {
-  count       = length(var.allowed_ssh_cidr_blocks) >= 1 ? 1 : 0
-  type        = "ingress"
-  from_port   = var.ssh_port
-  to_port     = var.ssh_port
-  protocol    = "tcp"
-  cidr_blocks = var.allowed_ssh_cidr_blocks
-
-  security_group_id = aws_security_group.lc_security_group.id
-}
-
-resource "aws_security_group_rule" "allow_ssh_inbound_from_security_group_ids" {
-  count                    = var.allowed_ssh_security_group_count
-  type                     = "ingress"
-  from_port                = var.ssh_port
-  to_port                  = var.ssh_port
-  protocol                 = "tcp"
-  source_security_group_id = element(var.allowed_ssh_security_group_ids, count.index)
-
-  security_group_id = aws_security_group.lc_security_group.id
-}
-
-resource "aws_security_group_rule" "allow_all_outbound" {
-  type        = "egress"
-  from_port   = 0
-  to_port     = 0
-  protocol    = "-1"
-  cidr_blocks = ["0.0.0.0/0"]
-
-  security_group_id = aws_security_group.lc_security_group.id
-}
-
-
-module "security_group_rules" {
-  source = "../consul-security-group-rules"
-
-  security_group_id                    = aws_security_group.lc_security_group.id
-  allowed_inbound_cidr_blocks          = var.allowed_inbound_cidr_blocks
-  allowed_inbound_security_group_ids   = var.allowed_inbound_security_group_ids
-  allowed_inbound_security_group_count = var.allowed_inbound_security_group_count
-
-  server_rpc_port = var.server_rpc_port
-  cli_rpc_port    = var.cli_rpc_port
-  serf_lan_port   = var.serf_lan_port
-  serf_wan_port   = var.serf_wan_port
-  http_api_port   = var.http_api_port
-  dns_port        = var.dns_port
-}
-
-
-resource "aws_iam_instance_profile" "instance_profile" {
-  count = var.enable_iam_setup ? 1 : 0
-
-  name_prefix = var.cluster_name
-  path        = var.instance_profile_path
-  role        = element(concat(aws_iam_role.instance_role.*.name, [""]), 0)
-
-
-  lifecycle {
-    create_before_destroy = true
+  tags = {
+    app_name  = var.app_name
+    workspace = terraform.workspace
   }
 }
 
-resource "aws_iam_role" "instance_role" {
-  count = var.enable_iam_setup ? 1 : 0
+resource "aws_ssm_parameter" "private_subnets" {
+  count       = var.create_private ? 1 : 0
+  name        = "/${var.app_name}/${terraform.workspace}/vpc/subnets/private"
+  description = "The ${var.app_name}'s vpc's private subnets"
+  type        = "StringList"
+  value       = join(",", aws_subnet.private.*.id)
+  overwrite   = "true"
 
-  name_prefix        = var.cluster_name
-  assume_role_policy = data.aws_iam_policy_document.instance_role.json
-
-  lifecycle {
-    create_before_destroy = true
+  tags = {
+    app_name  = var.app_name
+    workspace = terraform.workspace
   }
 }
 
-data "aws_iam_policy_document" "instance_role" {
-  statement {
-    effect  = "Allow"
-    actions = ["sts:AssumeRole"]
+resource "aws_ssm_parameter" "using_private" {
+  name        = "/${var.app_name}/${terraform.workspace}/vpc/using_private_subnets"
+  description = "Whether the VPC has been configured to use private subnets"
+  type        = "String"
+  value       = var.create_private
+  overwrite   = "true"
 
-    principals {
-      type        = "Service"
-      identifiers = ["ec2.amazonaws.com"]
-    }
+  tags = {
+    app_name  = var.app_name
+    workspace = terraform.workspace
   }
 }
 
+resource "aws_ssm_parameter" "num_azs" {
+  name        = "/${var.app_name}/${terraform.workspace}/vpc/num_azs"
+  description = "How many AZs VPC has been configured to use"
+  type        = "String"
+  value       = local.az_count
+  overwrite   = "true"
 
-module "iam_policies" {
-  source = "../consul-iam-policies"
+  tags = {
+    app_name  = var.app_name
+    workspace = terraform.workspace
+  }
+}
 
-  enabled     = var.enable_iam_setup
-  iam_role_id = element(concat(aws_iam_role.instance_role.*.id, [""]), 0)
+resource "aws_ssm_parameter" "cidr_block" {
+  name        = "/${var.app_name}/${terraform.workspace}/vpc/cidr_block"
+  description = "The ${var.app_name}'s vpc's cidr block"
+  type        = "String"
+  value       = aws_vpc.vpc.cidr_block
+  overwrite   = "true"
+
+  tags = {
+    app_name  = var.app_name
+    workspace = terraform.workspace
+  }
+}
+
+resource "aws_ssm_parameter" "id" {
+  name        = "/${var.app_name}/${terraform.workspace}/vpc/id"
+  description = "The ${var.app_name}'s vpc's id"
+  type        = "String"
+  value       = aws_vpc.vpc.id
+  overwrite   = "true"
+
+  tags = {
+    app_name  = var.app_name
+    workspace = terraform.workspace
+  }
 }

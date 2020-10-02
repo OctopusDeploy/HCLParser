@@ -132,11 +132,6 @@ namespace Octopus.CoreParsers.Hcl
         public static readonly Parser<char> DelimiterEndSquare = Parse.Char(']').Named("EndSquare");
 
         /// <summary>
-        /// The index used to access an item in the list
-        /// </summary>
-        public static readonly Parser<string> ListIndex = Parse.Regex(@"\[((\d|\w|[_\-.""])+|\*)\]").Named("ListIndex");
-
-        /// <summary>
         /// Escaped quote
         /// </summary>
         public static readonly Parser<string> EscapedDelimiterQuote =
@@ -264,7 +259,7 @@ namespace Octopus.CoreParsers.Hcl
                         .Except(DelimiterEndSquare)
                         .Except(DelimiterStartSquare)
                         .Many().Text())
-                    .Or(ListIndex))
+                    .Or(ListValueText))
                 .Many()
             from ifStatement in IfStatement.Optional()
             from endBracket in DelimiterEndSquare.Token()
@@ -385,7 +380,7 @@ namespace Octopus.CoreParsers.Hcl
             select value;
 
         /// <summary>
-        /// New in 0.12 - An set definition
+        /// New in 0.12 - An function definition
         /// </summary>
         public static readonly Parser<HclElement> FunctionCall =
             (from funcName in Parse.Regex(FunctionName)
@@ -401,64 +396,82 @@ namespace Octopus.CoreParsers.Hcl
                                 .Or(HereDocListValue)
                                 .Or(SingleLineComment)
                                 .Or(MultilineComment))
-                    from comma in Comma
+                    from comma in Comma.Optional()
                     select embeddedValues
                 ).Token().Many().Optional()
-                from lastItem in
-                (
-                    from embeddedValues in
-                        Parse.Ref(() =>
-                            FunctionCall
-                                .Or(ListValue)
-                                .Or(MapValue)
-                                .Or(LiteralListValue)
-                                .Or(HereDocListValue)
-                                .Or(SingleLineComment)
-                                .Or(MultilineComment))
-
-                    select embeddedValues
-                ).Token()
                 from closeBracket in RightBracket
                 select new HclFunctionElement
                 {
                     Name = funcName,
-                    Children =
-                        (firstItems.GetOrDefault() ?? Enumerable.Empty<HclElement>()).Union(lastItem.ToEnumerable())
+                    Children = firstItems.GetOrDefault() ?? Enumerable.Empty<HclElement>()
                 }).Token();
+
+        /// <summary>
+        /// Represents an indexer in an unquoted string. e.g. a = myvar[b]
+        /// This is lenient, consuming everything between balanced square brackets.
+        /// </summary>
+        public static readonly Parser<string> ListValueText =
+            from open in Parse.Char('[')
+            from content in
+                (Parse.AnyChar
+                    .Except(Parse.Char('['))
+                    .Except(Parse.Char(']'))
+                    .Except(Parse.Char(LineBreak))
+                    .Many().Text()
+                    .Or(ListValueText)).Many()
+            from close in Parse.Char(']')
+            select open + string.Join(string.Empty, content) + close;
+
+        public static readonly Parser<string> GroupText =
+            from open in Parse.Char('(')
+            from content in
+                (Parse.AnyChar
+                    .Except(Parse.Char('('))
+                    .Except(Parse.Char(')'))
+                    .Many().Text()
+                    .Or(GroupText)).Many()
+            from close in Parse.Char(')')
+            select open + string.Join(string.Empty, content) + close;
 
         /// <summary>
         /// Matches an unquoted value. New in 0.12
         /// </summary>
         public static readonly Parser<HclElement> UnquotedContent =
             // Consume a function call as part of the unquoted content
-            from content in FunctionCall
-                .Or(
-                    // Plain unquoted text must start a valid character
-                    from start in SpecialChars
-                        .Except(Parse.Char('.'))
-                        .Except(Parse.Char('*'))
-                        .Except(HashCommentStart)
-                        .Except(ForwardSlashCommentStart)
-                        .Except(MultilineComment)
-                        .Except(Parse.Regex(@"\s"))
-                    // Plain unquoted text then continues with known characters or sequences
-                    from continueFromStart in ListIndex
-                        .Or(SpecialChars
+            from content in
+                // capture a function and its parameters
+                FunctionCall
+                    // capture a grouped statement
+                    .Or(from groupedText in GroupText select new HclUnquotedStringElement{Value=groupedText})
+                    .Or(
+                        // Plain unquoted text must start a valid character
+                        from start in SpecialChars
+                            .Except(Parse.Char('.'))
+                            .Except(Parse.Char('*'))
+                            .Except(HashCommentStart)
+                            .Except(ForwardSlashCommentStart)
+                            .Except(MultilineComment)
                             .Except(Parse.Regex(@"\s"))
-                            .Many().Text()).Many()
-                    // We treat math expressions and nested quoted text as part of this unquoted text
-                    from otherFields in
-                        MathSymbol
-                            .Or(PropertyValueUntokenised)
-                            .Or(UnquotedContent)
-                            .Many()
-                    select new HclUnquotedExpressionElement
-                    {
-                        Children = new HclUnquotedStringElement
-                                {Value = start + string.Join(string.Empty, continueFromStart)}.ToEnumerable()
-                            .Union(otherFields)
-                    }
-                )
+                        // Plain unquoted text then continues with known characters or sequences
+                        from continueFromStart in ListValueText
+                            .Or(SpecialChars
+                                .Except(Parse.Regex(@"\s"))
+                                .Many().Text()).Many()
+                        // We treat math expressions and nested quoted text as part of this unquoted text
+                        from otherFields in
+                            MathSymbol
+                                .Or(PropertyValueUntokenised)
+                                .Or(from list in ListValueText select new HclUnquotedStringElement{Value=list})    // Todo - should this be a real list?
+                                .Or(UnquotedContent)
+
+                                .Many()
+                        select new HclUnquotedExpressionElement
+                        {
+                            Children = new HclUnquotedStringElement
+                                    {Value = start + string.Join(string.Empty, continueFromStart)}.ToEnumerable()
+                                .Union(otherFields)
+                        }
+                    )
             select content;
 
         /// <summary>
@@ -739,6 +752,15 @@ namespace Octopus.CoreParsers.Hcl
         ).WithWhiteSpace();
 
         /// <summary>
+        /// Represents the colon token. This is new in 0.12 as a way of defining maps.
+        /// </summary>
+        public static readonly Parser<char> Colon =
+        (
+            from equal in Parse.Char(':')
+            select equal
+        ).WithWhiteSpace();
+
+        /// <summary>
         /// Represents a value that can be assigned to a property
         /// </summary>
         public static readonly Parser<HclElement> UnquotedNameUnquotedElementProperty =
@@ -761,7 +783,7 @@ namespace Octopus.CoreParsers.Hcl
         /// </summary>
         public static readonly Parser<HclElement> ElementProperty =
             from name in Identifier
-            from eql in Equal
+            from eql in Equal.Or(Colon)
             from value in PropertyValue
             select new HclSimplePropertyElement {Name = name, Child = value, NameQuoted = false};
 
