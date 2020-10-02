@@ -17,46 +17,6 @@ namespace Octopus.CoreParsers.Hcl
             parsed.Children.Should().HaveCount(3);
         }
 
-        [Test]
-        [TestCase("hcl2forloop.txt")]
-        [TestCase("hcl2forloop2.txt")]
-        public void ForLoopObject(string file)
-        {
-            var template = TerraformLoadTemplate(file, HCL2TemplateSamples);
-            var parsed = HclParser.ForLoopObjectValue.Parse(template);
-            parsed.StartBracket.Should().Be('{');
-            parsed.EndBracket.Should().Be('}');
-            parsed.Variable.Should().Be("s");
-            parsed.Collection.Should().Be("aws_elastic_beanstalk_environment.example.all_settings");
-            parsed.Statements.Should().Be("s.name => s.value");
-            parsed.IfStatement.Should().Be("if s.namespace == \"aws:ec2:vpc\"");
-        }
-
-        [Test]
-        [TestCase("hcl2forloop3.txt")]
-        public void ForLoopList(string file)
-        {
-            var template = TerraformLoadTemplate(file, HCL2TemplateSamples);
-            var parsed = HclParser.ForLoopListValue.Parse(template);
-            parsed.StartBracket.Should().Be('[');
-            parsed.EndBracket.Should().Be(']');
-            parsed.Variable.Should().Be("o");
-            parsed.Collection.Should().Be("var.list");
-            parsed.Statements.Should().Be("o.interfaces[0].name[1]");
-            parsed.IfStatement.Should().Be("");
-        }
-
-        [Test]
-        [TestCase("hcl2ifstatement.txt")]
-        [TestCase("hcl2ifstatement2.txt")]
-        [TestCase("hcl2ifstatement3.txt")]
-        public void IfStatement(string file)
-        {
-            var template = TerraformLoadTemplate(file, HCL2TemplateSamples);
-            var parsed = HclParser.IfStatement.Parse(template);
-            parsed.Should().Be("if s.namespace == \"aws:ec2:vpc\"");
-        }
-
         [TestCase("var.region == \"\"")]
         [TestCase("var.region == blah")]
         [TestCase("var.region == blah + 3 - 2 * 1")]
@@ -131,6 +91,23 @@ namespace Octopus.CoreParsers.Hcl
         public void TestListAssignment(string index)
         {
             var result = HclParser.ElementListProperty.Parse(index);
+            result.ToString().Should().Be(index);
+        }
+
+        [TestCase("(hi)")]
+        public void TestGroupText(string index)
+        {
+            var result = HclParser.GroupText.Parse(index);
+            result.Should().Be(index);
+
+            var result2 = HclParser.UnquotedContent.Parse(index);
+            result2.Value.Should().Be(index);
+        }
+
+        [TestCase("{for l in keys(local.id_context) : title(l) => local.id_context[l] if length(local.id_context[l]) > 0}")]
+        public void TestForLoop(string index)
+        {
+            var result = HclParser.UnquotedContent.Parse(index);
             result.ToString().Should().Be(index);
         }
 

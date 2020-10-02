@@ -65,12 +65,7 @@ namespace Octopus.CoreParsers.Hcl
         /// <summary>
         /// New in 0.12 - the characters before the start of an if statement
         /// </summary>
-        public static readonly Regex StartOfIfStatement = new Regex(@"\s(?=if)");
-
-        /// <summary>
-        /// A regex to match function names
-        /// </summary>
-        public static readonly Regex FunctionName = new Regex("[a-zA-Z][a-zA-Z0-9]*");
+        public static readonly Regex StartOfIfStatement = new Regex(@" if");
 
         /// <summary>
         /// The \n char
@@ -216,60 +211,6 @@ namespace Octopus.CoreParsers.Hcl
                 .Or(SimpleLiteralQuote).Many()
             select curly.GetOrDefault() + Regex.Unescape(string.Concat(content));
 
-        /// <summary>
-        /// Matches the plain text in a string, or the Interpolation block
-        /// </summary>
-        public static readonly Parser<string> IfStatement =
-            from ifIdentifier in IfToken
-            from ifStatement in Parse.AnyChar.Except(DelimiterEndSquare.Or(DelimiterEndCurly)).Many().Text()
-            select ifIdentifier + " " + ifStatement;
-
-        /// <summary>
-        /// Matches a for loop. New in 0.12
-        /// </summary>
-        public static readonly Parser<HclForLoopElement> ForLoopObjectValue =
-            from curly in DelimiterStartCurly.Token()
-            from forIdentifier in Parse.String("for").WithWhiteSpace()
-            from forVar in Parse.AnyChar.Except(Parse.String(" in ")).Many().Text()
-            from inIdentifier in Parse.String("in").WithWhiteSpace()
-            from inValue in Parse.AnyChar.Except(Parse.Char(':')).Many().Text()
-            from colonIdentifier in Parse.Char(':').Token()
-            from statements in Parse.AnyChar
-                .Except(Parse.Regex(StartOfIfStatement))
-                .Except(DelimiterEndCurly)
-                .Many()
-                .Text()
-            from ifStatement in IfStatement.Optional()
-            from endCurly in DelimiterEndCurly.Token()
-            select new HclForLoopElement(curly, endCurly, forVar.Trim(), inValue.Trim(), statements.Trim(),
-                ifStatement.GetOrDefault().Trim());
-
-        /// <summary>
-        /// Matches a for loop
-        /// </summary>
-        public static readonly Parser<HclForLoopElement> ForLoopListValue =
-            from startBracket in DelimiterStartSquare.Token()
-            from forIdentifier in Parse.String("for").WithWhiteSpace()
-            from forVar in Parse.AnyChar.Except(Parse.String(" in ")).Many().Text()
-            from inIdentifier in Parse.String("in").WithWhiteSpace()
-            from inValue in Parse.AnyChar.Except(Parse.Char(':')).Many().Text()
-            from colonIdentifier in Parse.Char(':').Token()
-            from statements in ((Parse.AnyChar
-                        .Except(Parse.Regex(StartOfIfStatement))
-                        .Except(DelimiterEndSquare)
-                        .Except(DelimiterStartSquare)
-                        .Many().Text())
-                    .Or(ListOrIndexText))
-                .Many()
-            from ifStatement in IfStatement.Optional()
-            from endBracket in DelimiterEndSquare.Token()
-            select new HclForLoopElement(
-                startBracket,
-                endBracket,
-                forVar.Trim(),
-                inValue.Trim(),
-                string.Join(string.Empty, statements.ToArray()).Trim(),
-                ifStatement.GetOrDefault()?.Trim() ?? string.Empty);
 
         /// <summary>
         /// Matches the plain text in a string, or the Interpolation block
@@ -402,9 +343,11 @@ namespace Octopus.CoreParsers.Hcl
                     .Except(Parse.Char('('))
                     .Except(Parse.Char(')'))
                     .Many().Text())
-                    .Or(GroupText).Many()
+                    .Or(GroupText)
+                    .Many()
+                    .Optional()
             from close in Parse.Char(')')
-            select open + string.Join(string.Empty, content) + close;
+            select open + string.Join(string.Empty, content.GetOrDefault() ?? Enumerable.Empty<string>()) + close;
 
         public static readonly Parser<string> CurlyGroupText =
             from open in Parse.Char('{').Token()
@@ -448,19 +391,27 @@ namespace Octopus.CoreParsers.Hcl
         public static readonly Parser<HclElement> UnquotedContent =
             /*
              * An unquoted string must begin with any character expect for a quote (which would make it a quoted string),
-             * a square bracket (which would make it a list) or a curly bracket (which would make it a map), a less
-             * than (which would make it a HereDoc), or hash (which would make it a comment), or whitespace (which is
+             * a less than (which would make it a HereDoc), hash (which would make it a comment), or whitespace (which is
              * not significant at the start of the string).
+             *
+             * We can start with parentheses, curly brackets and square brackets. These catch math grouping, and for loops
+             * that build up lists or objects.
              */
             from start in Parse.AnyChar
                 .Except(Parse.Char('['))
                 .Except(Parse.Char(']'))
                 .Except(Parse.Char('{'))
                 .Except(Parse.Char('}'))
+                .Except(Parse.Char('('))
+                .Except(Parse.Char(')'))
                 .Except(Parse.Char('<'))
                 .Except(Parse.Char('#'))
                 .Except(Parse.Char('"'))
                 .Except(Parse.Regex(@"\s"))
+                .Once().Text()
+                .Or(GroupText)
+                .Or(ListOrIndexText)
+                .Or(CurlyGroupText)
             /*
              * Once we enter an unquoted string, we need to understand where the content ends.
              * We assume any opening bracket will have a matching closing bracket, and consume everything (line breaks
@@ -768,7 +719,7 @@ namespace Octopus.CoreParsers.Hcl
         /// </summary>
         public static readonly Parser<HclElement> ElementProperty =
             from name in Identifier
-            from eql in Equal.Or(Colon)
+            from eql in Equal
             from value in PropertyValue
             select new HclSimplePropertyElement {Name = name, Child = value, NameQuoted = false};
 
@@ -841,24 +792,6 @@ namespace Octopus.CoreParsers.Hcl
             select new HclMapPropertyElement {Name = name, Children = properties.Children};
 
         /// <summary>
-        /// New in 0.12 - Represent a for loop generating an object assigned to a property
-        /// </summary>
-        public static readonly Parser<HclElement> ElementForLoopObjectProperty =
-            (from name in Identifier.Or(StringLiteralQuote)
-            from eql in Equal
-            from properties in ForLoopObjectValue
-            select new HclMapPropertyElement {Name = name, Children = properties.Children}).Token();
-
-        /// <summary>
-        /// New in 0.12 - Represent a for loop generating an list assigned to a property
-        /// </summary>
-        public static readonly Parser<HclElement> ElementForLoopListProperty =
-            (from name in Identifier.Or(StringLiteralQuote)
-            from eql in Equal
-            from value in ForLoopListValue
-            select new HclListPropertyElement {Name = name, Children = value.Children, NameQuoted = false}).Token();
-
-        /// <summary>
         /// New in 0.12 - Represent a property holding a type
         /// </summary>
         public static readonly Parser<HclElement> ElementTypedObjectProperty =
@@ -924,13 +857,10 @@ namespace Octopus.CoreParsers.Hcl
         public static readonly Parser<IEnumerable<HclElement>> Properties =
             (from value in NameElement
                     .Or(ElementTypedObjectProperty)
-                    .Or(ForLoopObjectValue)
                     .Or(NameValueElement)
                     .Or(NameValueTypeElement)
                     .Or(ElementProperty)
                     .Or(QuotedElementProperty)
-                    .Or(UnquotedNameUnquotedElementProperty)
-                    .Or(QuotedNameUnquotedElementProperty)
                     .Or(ElementListProperty)
                     .Or(QuotedHclElementListProperty)
                     .Or(ElementMapProperty)
@@ -938,8 +868,8 @@ namespace Octopus.CoreParsers.Hcl
                     .Or(QuotedHclElementMultilineProperty)
                     .Or(SingleLineComment)
                     .Or(MultilineComment)
-                    .Or(ElementForLoopObjectProperty)
-                    .Or(ElementForLoopListProperty)
+                    .Or(UnquotedNameUnquotedElementProperty)
+                    .Or(QuotedNameUnquotedElementProperty)
                 from comma in Comma.Optional()
                 select value).Many().Token();
 

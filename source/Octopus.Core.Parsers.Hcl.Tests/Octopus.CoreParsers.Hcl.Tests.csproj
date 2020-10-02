@@ -480,6 +480,12 @@
     <None Update="Octopus\CoreParsers\Hcl\HCL2TemplateSamples\hcl2githubexample100.tf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Octopus\CoreParsers\Hcl\HCL2TemplateSamples\hcl2githubexample58.tf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\HCL2TemplateSamples\hcl2githubexample59.tf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
   <ItemGroup>
