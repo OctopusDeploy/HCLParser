@@ -258,6 +258,84 @@
     <None Update="Octopus\CoreParsers\Hcl\HCL2TemplateSamples\hcl2githubexample24.tf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Octopus\CoreParsers\Hcl\HCL2TemplateSamples\hcl2githubexample25.tf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\HCL2TemplateSamples\hcl2githubexample26.tf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\HCL2TemplateSamples\hcl2githubexample27.tf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\HCL2TemplateSamples\hcl2githubexample28.tf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\HCL2TemplateSamples\hcl2githubexample29.tf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\HCL2TemplateSamples\hcl2githubexample30.tf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\HCL2TemplateSamples\hcl2githubexample31.tf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\HCL2TemplateSamples\hcl2githubexample32.tf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\HCL2TemplateSamples\hcl2githubexample33.tf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\HCL2TemplateSamples\hcl2githubexample34.tf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\HCL2TemplateSamples\hcl2githubexample35.tf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\HCL2TemplateSamples\hcl2githubexample36.tf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\HCL2TemplateSamples\hcl2githubexample37.tf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\HCL2TemplateSamples\hcl2githubexample38.tf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\HCL2TemplateSamples\hcl2githubexample39.tf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\HCL2TemplateSamples\hcl2githubexample40.tf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\HCL2TemplateSamples\hcl2githubexample41.tf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\HCL2TemplateSamples\hcl2githubexample42.tf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\HCL2TemplateSamples\hcl2githubexample43.tf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\HCL2TemplateSamples\hcl2githubexample44.tf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\HCL2TemplateSamples\hcl2githubexample45.tf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\HCL2TemplateSamples\hcl2githubexample46.tf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\HCL2TemplateSamples\hcl2githubexample47.tf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\HCL2TemplateSamples\hcl2githubexample48.tf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\HCL2TemplateSamples\hcl2githubexample49.tf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Octopus\CoreParsers\Hcl\HCL2TemplateSamples\hcl2githubexample50.tf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
   <ItemGroup>
