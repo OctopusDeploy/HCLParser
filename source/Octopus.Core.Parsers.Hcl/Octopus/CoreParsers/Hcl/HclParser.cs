@@ -46,6 +46,59 @@ namespace Octopus.CoreParsers.Hcl
         public static readonly Regex TrueFalse = new Regex(@"true|false", RegexOptions.IgnoreCase);
 
         /// <summary>
+        /// Represents the equals token
+        /// </summary>
+        public static readonly Parser<char> Equal =
+        (
+            from equal in Parse.Char('=')
+            select equal
+        ).WithWhiteSpace();
+
+        /// <summary>
+        /// Represents the colon token. This is new in 0.12 as a way of defining maps.
+        /// </summary>
+        public static readonly Parser<char> Colon =
+        (
+            from equal in Parse.Char(':')
+            select equal
+        ).WithWhiteSpace();
+
+        /// <summary>
+        /// Open bracket
+        /// </summary>
+        public static readonly Parser<char> LeftBracket = Parse.Char('(').Token();
+
+        /// <summary>
+        /// Close bracket
+        /// </summary>
+        public static readonly Parser<char> RightBracket = Parse.Char(')').Token();
+
+        /// <summary>
+        /// Array start token
+        /// </summary>
+        public static readonly Parser<char> LeftSquareBracket = Parse.Char('[').Token();
+
+        /// <summary>
+        /// Array end token
+        /// </summary>
+        public static readonly Parser<char> RightSquareBracket = Parse.Char(']').Token();
+
+        /// <summary>
+        /// Object start token
+        /// </summary>
+        public static readonly Parser<char> LeftCurly = Parse.Char('{').Token();
+
+        /// <summary>
+        /// Object end token
+        /// </summary>
+        public static readonly Parser<char> RightCurly = Parse.Char('}').Token();
+
+        /// <summary>
+        /// Comma token
+        /// </summary>
+        public static readonly Parser<char> Comma = Parse.Char(',').Token();
+
+        /// <summary>
         /// An escaped interpolation curly
         /// </summary>
         public static readonly Parser<string> EscapedDelimiterStartCurly =
@@ -319,7 +372,8 @@ namespace Octopus.CoreParsers.Hcl
             select open + string.Join(string.Empty, content) + close;
 
         /// <summary>
-        /// Math symbols. New in 0.12
+        /// Math symbols. These are used to indicate places in unquoted values where line breaks can be placed.
+        /// New in 0.12
         /// </summary>
         public static readonly Parser<string> MathSymbol =
             from mathOperator in
@@ -347,12 +401,13 @@ namespace Octopus.CoreParsers.Hcl
         /// </summary>
         public static readonly Parser<HclElement> UnquotedContent =
             /*
-             * An unquoted string must begin with any character expect for a quote (which would make it a quoted string),
-             * a less than (which would make it a HereDoc), hash (which would make it a comment), or whitespace (which is
-             * not significant at the start of the string).
+             * An unquoted string must begin with any character expect for a quote
+             * (which would make it a quoted string), a less than (which would make it a HereDoc),
+             * hash (which would make it a comment), or whitespace (which is not significant at the
+             * start of the string).
              *
-             * We can start with parentheses, curly brackets and square brackets. These catch math grouping, and for loops
-             * that build up lists or objects.
+             * We can start with parentheses, curly brackets and square brackets. These catch
+             * math grouping, and for loops that build up lists or objects.
              */
             from start in Parse.AnyChar
                 .Except(Parse.Char('['))
@@ -569,42 +624,7 @@ namespace Octopus.CoreParsers.Hcl
             };
 
         /// <summary>
-        /// Open bracket
-        /// </summary>
-        public static readonly Parser<char> LeftBracket = Parse.Char('(').Token();
-
-        /// <summary>
-        /// Close bracket
-        /// </summary>
-        public static readonly Parser<char> RightBracket = Parse.Char(')').Token();
-
-        /// <summary>
-        /// Array start token
-        /// </summary>
-        public static readonly Parser<char> LeftSquareBracket = Parse.Char('[').Token();
-
-        /// <summary>
-        /// Array end token
-        /// </summary>
-        public static readonly Parser<char> RightSquareBracket = Parse.Char(']').Token();
-
-        /// <summary>
-        /// Object start token
-        /// </summary>
-        public static readonly Parser<char> LeftCurly = Parse.Char('{').Token();
-
-        /// <summary>
-        /// Object end token
-        /// </summary>
-        public static readonly Parser<char> RightCurly = Parse.Char('}').Token();
-
-        /// <summary>
-        /// Comma token
-        /// </summary>
-        public static readonly Parser<char> Comma = Parse.Char(',').Token();
-
-        /// <summary>
-        /// Represents the contents of a map
+        /// Represents the contents of a map/object
         /// </summary>
         public static readonly Parser<HclElement> MapValue =
         (
@@ -615,7 +635,7 @@ namespace Octopus.CoreParsers.Hcl
         ).Token();
 
         /// <summary>
-        /// Represents a list. Lists can be embedded.
+        /// Represents a list/tuple/set. Lists can be embedded.
         /// </summary>
         public static readonly Parser<HclElement> ListValue =
         (
@@ -634,24 +654,6 @@ namespace Octopus.CoreParsers.Hcl
             from close in RightSquareBracket
             select new HclListElement {Children = content}
         ).Token();
-
-        /// <summary>
-        /// Represets the equals token
-        /// </summary>
-        public static readonly Parser<char> Equal =
-        (
-            from equal in Parse.Char('=')
-            select equal
-        ).WithWhiteSpace();
-
-        /// <summary>
-        /// Represents the colon token. This is new in 0.12 as a way of defining maps.
-        /// </summary>
-        public static readonly Parser<char> Colon =
-        (
-            from equal in Parse.Char(':')
-            select equal
-        ).WithWhiteSpace();
 
         /// <summary>
         /// Represents a value that can be assigned to a property.
