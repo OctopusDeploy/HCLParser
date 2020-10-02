@@ -362,11 +362,10 @@ namespace Octopus.CoreParsers.Hcl
         public static readonly Parser<string> CurlyGroupText =
             from open in Parse.Char('{').Token()
             from content in
-                MathSymbol
-                    .Or(Parse.AnyChar
-                        .Except(Parse.Char('{'))
-                        .Except(Parse.Char('}'))
-                        .Many().Text())
+                Parse.AnyChar
+                    .Except(Parse.Char('{'))
+                    .Except(Parse.Char('}'))
+                    .Many().Text()
                     .Or(GroupText).Many()
             from close in Parse.Char('}')
             select open + string.Join(string.Empty, content) + close;
