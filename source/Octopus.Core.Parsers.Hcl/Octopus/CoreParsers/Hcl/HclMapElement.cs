@@ -13,8 +13,11 @@ namespace Octopus.CoreParsers.Hcl
         {
             var indentString = GetIndent(indent);
             var lineBreak = indent == -1 ? string.Empty : "\n";
+            var nextIndent = indent == -1 ? -1 : indent + 1;
+            var separator = indent == -1 ? ", " : "\n";
+
             return indentString + "{" + lineBreak +
-                string.Join("\n", Children?.Select(child => child.ToString(indent + 1)) ?? Enumerable.Empty<string>()) +
+                string.Join(separator, Children?.Select(child => child.ToString(nextIndent)) ?? Enumerable.Empty<string>()) +
                 lineBreak + indentString + "}";
         }
     }

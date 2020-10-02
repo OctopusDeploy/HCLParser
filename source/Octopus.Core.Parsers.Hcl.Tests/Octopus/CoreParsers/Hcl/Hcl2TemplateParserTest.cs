@@ -111,6 +111,15 @@ namespace Octopus.CoreParsers.Hcl
             result.ToString().Should().Be(index);
         }
 
+        [TestCase("{foo: 2}", "{foo = 2}")]
+        [TestCase("{foo: 2, bar:\"a\"}", "{foo = 2, bar = \"a\"}")]
+        [TestCase("{foo: 2, bar:\"a\", baz = null}", "{foo = 2, bar = \"a\", baz = null}")]
+        public void TestObject(string index, string expected)
+        {
+            var result = HclParser.MapValue.Parse(index);
+            result.ToString(-1).Should().Be(expected);
+        }
+
         [Test]
         [TestCase("hcl2example1.txt")]
         [TestCase("hcl2example2.txt")]

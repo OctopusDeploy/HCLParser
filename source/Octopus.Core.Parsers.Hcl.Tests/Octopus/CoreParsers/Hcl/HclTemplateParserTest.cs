@@ -123,22 +123,6 @@ namespace Octopus.CoreParsers.Hcl
             parsed.Children.Should().HaveCount(3);
         }
 
-        [Test]
-        [Ignore("This may be valid now in 0.12")]
-        public void Example85()
-        {
-            try
-            {
-                var template = TerraformLoadTemplate("example85.tf");
-                var parsed = HclParser.HclTemplate.Parse(template);
-                throw new Exception("Parse should have failed");
-            }
-            catch (ParseException)
-            {
-                // all good
-            }
-        }
-
         /// <summary>
         /// 100 random examples of terraform templates from GitHub.
         /// </summary>
@@ -334,17 +318,20 @@ namespace Octopus.CoreParsers.Hcl
         [Test]
         public void ParseMapColon()
         {
-            try
-            {
-                var template = TerraformLoadTemplate("map_colon.tf");
-                var parsed = HclParser.NameValueElement.Parse(template);
-                parsed.Name.Should().Match("variable");
-                throw new Exception("parsing should have failed");
-            }
-            catch (ParseException)
-            {
-                //all good
-            }
+            var template = TerraformLoadTemplate("map_colon.tf");
+            var parsed = HclParser.NameValueElement.Parse(template);
+            parsed.Name.Should().Match("variable");
+            parsed.Child.Name.Should().Match("default");
+            var children = parsed.Child.Children.ToArray();
+
+            children[0].Name.Should().Match("eu-west-1");
+            children[0].Value.Should().Match("ami-674cbc1e");
+            children[1].Name.Should().Match("us-east-1");
+            children[1].Value.Should().Match("ami-1d4e7a66");
+            children[2].Name.Should().Match("us-west-1");
+            children[2].Value.Should().Match("ami-969ab1f6");
+            children[3].Name.Should().Match("us-west-2");
+            children[3].Value.Should().Match("ami-8803e0f0");
         }
 
         [Test]
@@ -787,27 +774,6 @@ namespace Octopus.CoreParsers.Hcl
         }
 
         [Test]
-        public void AssignColon()
-        {
-            try {
-                var template = TerraformLoadTemplate("assign_colon.hcl");
-                var parsed = HclParser.HclTemplate.Parse(template);
-                parsed.Children.Should().HaveCount(1);
-                parsed.Children.First().Children.First().Children.FirstOrDefault(obj => obj.Name == "foo").Should().NotBeNull();
-                parsed.Children.First().Children.First().Children.First(obj => obj.Name == "foo").Children.FirstOrDefault(obj => obj.Name == "bar").Should().NotBeNull();
-                parsed.Children.First().Children.First().Children.First(obj => obj.Name == "foo").Children.FirstOrDefault(obj => obj.Name == "baz").Should().NotBeNull();
-                parsed.Children.First().Children.First().Children.First(obj => obj.Name == "foo").Children.First(obj => obj.Name == "baz").Children.Any(obj => obj.Value == "1").Should().BeTrue();
-                parsed.Children.First().Children.First().Children.First(obj => obj.Name == "foo").Children.First(obj => obj.Name == "baz").Children.Any(obj => obj.Value == "2").Should().BeTrue();
-                parsed.Children.First().Children.First().Children.First(obj => obj.Name == "foo").Children.First(obj => obj.Name == "baz").Children.Any(obj => obj.Value == "foo").Should().BeTrue();
-                throw new Exception("Parsing should have failed");
-            }
-            catch (ParseException)
-            {
-                //all good
-            }
-        }
-
-        [Test]
         public void AssignDeep()
         {
             var template = TerraformLoadTemplate("assign_deep.hcl");
@@ -1102,21 +1068,6 @@ namespace Octopus.CoreParsers.Hcl
             parsed.Children.FirstOrDefault(obj => obj.Name == "foo").Should().NotBeNull();
             parsed.Children.First(obj => obj.Name == "foo").Children.FirstOrDefault(obj => obj.Name == "one" && obj.Value == "1").Should().NotBeNull();
             parsed.Children.First(obj => obj.Name == "foo").Children.FirstOrDefault(obj => obj.Name == "two" && obj.Value == "2").Should().NotBeNull();
-        }
-
-        [Test]
-        public void Old()
-        {
-            try
-            {
-                var template = TerraformLoadTemplate("old.hcl");
-                var parsed = HclParser.HclTemplate.Parse(template);
-                throw new Exception("Parsing should have failed");
-            }
-            catch (ParseException)
-            {
-                // all good
-            }
         }
 
         [Test]

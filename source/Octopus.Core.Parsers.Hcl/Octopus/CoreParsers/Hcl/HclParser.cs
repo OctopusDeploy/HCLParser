@@ -697,38 +697,42 @@ namespace Octopus.CoreParsers.Hcl
         ).WithWhiteSpace();
 
         /// <summary>
-        /// Represents a value that can be assigned to a property
+        /// Represents a value that can be assigned to a property.
+        /// Note equals or colons used to separated keys from values: https://github.com/hashicorp/hcl/blob/hcl2/hclsyntax/spec.md#collection-values
         /// </summary>
         public static readonly Parser<HclElement> UnquotedNameUnquotedElementProperty =
             from name in Identifier
-            from eql in Equal
+            from eql in Equal.Or(Colon)
             from value in UnquotedContent
             select new HclUnquotedExpressionPropertyElement {Name = name, Child = value, NameQuoted = false};
 
         /// <summary>
         /// Represents a value that can be assigned to a property
+        /// Note equals or colons used to separated keys from values: https://github.com/hashicorp/hcl/blob/hcl2/hclsyntax/spec.md#collection-values
         /// </summary>
         public static readonly Parser<HclElement> QuotedNameUnquotedElementProperty =
             from name in StringLiteralQuote
-            from eql in Equal
+            from eql in Equal.Or(Colon)
             from value in UnquotedContent
             select new HclUnquotedExpressionPropertyElement {Name = name, Child = value, NameQuoted = true};
 
         /// <summary>
         /// Represents a value that can be assigned to a property
+        /// Note equals or colons used to separated keys from values: https://github.com/hashicorp/hcl/blob/hcl2/hclsyntax/spec.md#collection-values
         /// </summary>
         public static readonly Parser<HclElement> ElementProperty =
             from name in Identifier
-            from eql in Equal
+            from eql in Equal.Or(Colon)
             from value in PropertyValue
             select new HclSimplePropertyElement {Name = name, Child = value, NameQuoted = false};
 
         /// <summary>
         /// Represents a value that can be assigned to a property
+        /// Note equals or colons used to separated keys from values: https://github.com/hashicorp/hcl/blob/hcl2/hclsyntax/spec.md#collection-values
         /// </summary>
         public static readonly Parser<HclElement> QuotedElementProperty =
             from name in StringLiteralQuote
-            from eql in Equal
+            from eql in Equal.Or(Colon)
             from value in PropertyValue
             select new HclSimplePropertyElement {Name = name, Child = value, NameQuoted = true};
 
