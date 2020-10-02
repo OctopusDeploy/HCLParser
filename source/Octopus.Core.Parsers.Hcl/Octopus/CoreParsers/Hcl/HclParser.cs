@@ -19,53 +19,10 @@ namespace Octopus.CoreParsers.Hcl
     public class HclParser
     {
         /// <summary>
-        /// These characters have special meaning. See SelfToken in the HCL code base.
-        /// Note that this list doesn't include the period or asterisk. We are more lenient, and
-        /// fold these into unquoted strings.
-        /// </summary>
-        public static Parser<char> SpecialChars = Parse.AnyChar
-            .Except(Parse.Char('"'))
-            .Except(Parse.Char('/'))
-            .Except(Parse.Char('%'))
-            .Except(Parse.Char('-'))
-            .Except(Parse.Char('+'))
-            .Except(Parse.Char('='))
-            .Except(Parse.Char('|'))
-            .Except(Parse.Char('>'))
-            .Except(Parse.Char('<'))
-            .Except(Parse.Char('!'))
-            .Except(Parse.Char('&'))
-            .Except(Parse.Char('~'))
-            .Except(Parse.Char('^'))
-            .Except(Parse.Char(';'))
-            .Except(Parse.Char('`'))
-            .Except(Parse.Char('\''))
-            .Except(Parse.Char(','))
-            .Except(Parse.Char(')'))
-            .Except(Parse.Char('('))
-            .Except(Parse.Char('}'))
-            .Except(Parse.Char('{'))
-            .Except(Parse.Char(']'))
-            .Except(Parse.Char('['))
-            .Except(Parse.Char('?'))
-            .Except(Parse.Char(':'))
-            .Except(Parse.Char(LineBreak));
-
-        /// <summary>
         /// New in 0.12 - the ability to mark a block as dynamic
         /// </summary>
         public static readonly Parser<string> Dynamic =
             Parse.String("dynamic").Text().Named("Dynamic configuration block");
-
-        /// <summary>
-        /// New in 0.12 - the start of an "if" statement
-        /// </summary>
-        public static readonly Parser<string> IfToken = Parse.String("if").Text().Token().Named("If statement");
-
-        /// <summary>
-        /// New in 0.12 - the characters before the start of an if statement
-        /// </summary>
-        public static readonly Regex StartOfIfStatement = new Regex(@" if");
 
         /// <summary>
         /// The \n char
