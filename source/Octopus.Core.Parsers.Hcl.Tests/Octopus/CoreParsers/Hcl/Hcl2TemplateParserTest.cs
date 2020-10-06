@@ -80,11 +80,11 @@ namespace Octopus.CoreParsers.Hcl
             result.ToString().Should().Be(index);
         }
 
-        [TestCase("[\n  var.region\n]")]
+        [TestCase("[var.region]")]
         public void TestUnquotedList(string index)
         {
             var result = HclParser.ListValue.Parse(index);
-            result.ToString().Should().Be(index);
+            result.ToString(-1).Should().Be(index);
         }
 
         [Test]
@@ -106,14 +106,6 @@ namespace Octopus.CoreParsers.Hcl
         [Test]
         [TestCase("${var.network_name}-ip")]
         public void TestStringLiteralQuote(string index)
-        {
-            var result = HclParser.StringLiteralQuoteContent.Parse(index);
-            result.Should().Be(index);
-        }
-
-        [Test]
-        [TestCase("${var.network_name}-ip")]
-        public void TestStringLiteralQuoteContent(string index)
         {
             var result = HclParser.StringLiteralQuoteContent.Parse(index);
             result.Should().Be(index);
@@ -142,6 +134,26 @@ namespace Octopus.CoreParsers.Hcl
         public void TestGroupText(string index)
         {
             var result = HclParser.GroupText.Parse(index);
+            result.Should().Be(index);
+
+            var result2 = HclParser.UnquotedContent.Parse(index);
+            result2.Value.Should().Be(index);
+        }
+
+        [TestCase("{hi}")]
+        public void TestCurlyGroupText(string index)
+        {
+            var result = HclParser.CurlyGroupText.Parse(index);
+            result.Should().Be(index);
+
+            var result2 = HclParser.UnquotedContent.Parse(index);
+            result2.Value.Should().Be(index);
+        }
+
+        [TestCase("[hi]")]
+        public void TestListOrIndexText(string index)
+        {
+            var result = HclParser.ListOrIndexText.Parse(index);
             result.Should().Be(index);
 
             var result2 = HclParser.UnquotedContent.Parse(index);
