@@ -19,11 +19,6 @@ namespace Octopus.CoreParsers.Hcl
         public const string RootType = "#ROOT";
 
         /// <summary>
-        /// The type defining a for loop
-        /// </summary>
-        public const string ForLoopType = "#FORLOOP";
-
-        /// <summary>
         /// The type for string, number and boolean elements
         /// </summary>
         public const string StringType = "String";
@@ -187,14 +182,17 @@ namespace Octopus.CoreParsers.Hcl
 
         public virtual string ToString(bool naked, int indent)
         {
-            var indentString = GetIndent(indent);
+            var indentString = indent == -1 ? string.Empty : GetIndent(indent);
+            var lineBreak = indent == -1 ? string.Empty : "\n";
+            var nextIndent = indent == -1 ? -1 : indent + 1;
+            var separator = indent == -1 ? ", " : "\n";
 
             return indentString + OriginalName +
                 ProcessedValue?.Map(a => " \"" + EscapeQuotes(a) + "\"") +
                 Type?.Map(a => " \"" + EscapeQuotes(a) + "\"") +
-                " {\n" +
-                string.Join("\n", Children?.Select(child => child.ToString(indent + 1)) ?? Enumerable.Empty<string>()) +
-                "\n" + indentString + "}";
+                " {" + lineBreak +
+                string.Join(separator, Children?.Select(child => child.ToString(nextIndent)) ?? Enumerable.Empty<string>()) +
+                lineBreak + indentString + "}";
         }
 
         public string ToString(int indent)

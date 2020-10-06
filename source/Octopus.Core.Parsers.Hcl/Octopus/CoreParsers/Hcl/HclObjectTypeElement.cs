@@ -12,10 +12,14 @@ namespace Octopus.CoreParsers.Hcl
 
         public override string ToString(bool naked, int indent)
         {
-            var parentString = GetIndent(Math.Max(0, indent - 1));
-            return "object({\n" +
-                string.Join("\n", Children?.Select(child => child.ToString(indent + 1)) ?? Enumerable.Empty<string>()) +
-                "\n" + parentString + "})";
+            var indentString = indent == -1 ? string.Empty : GetIndent(indent);
+            var lineBreak = indent == -1 ? string.Empty : "\n";
+            var nextIndent = indent == -1 ? -1 : indent + 1;
+            var separator = indent == -1 ? ", " : "\n";
+
+            return "object({" + lineBreak +
+                   string.Join(separator, Children?.Select(child => child.ToString(nextIndent)) ?? Enumerable.Empty<string>()) +
+                   lineBreak + indentString + "})";
         }
     }
 }

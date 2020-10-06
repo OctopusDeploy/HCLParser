@@ -391,12 +391,13 @@ namespace Octopus.CoreParsers.Hcl
                     .Or(Parse.String("||"))
                     .Or(Parse.String("?"))
                     .Or(Parse.String(":"))
+                    .Or(Parse.String("="))
                     .Text()
-                    .Token()
-            select mathOperator;
+                    .RequiredToken()
+            select " " + mathOperator + " ";
 
         /// <summary>
-        /// Match quoted string content, and inclde the quotes in the result. This is used to match quoted strings
+        /// Match quoted string content, and include the quotes in the result. This is used to match quoted strings
         /// in a larger unquoted property value.
         /// </summary>
         public static readonly Parser<string> StringLiteralQuoteUnTokenised =
@@ -462,28 +463,29 @@ namespace Octopus.CoreParsers.Hcl
              * parser.
              */
             from content in
-                Parse.AnyChar
-                    .Except(Parse.Char('['))
-                    .Except(Parse.Char(']'))
-                    .Except(Parse.Char('{'))
-                    .Except(Parse.Char('}'))
-                    .Except(Parse.Char('('))
-                    .Except(Parse.Char(')'))
-                    .Except(Parse.Char(','))
-                    .Except(Parse.Char('"'))
-                    .Except(Parse.LineTerminator)
-                    .Many()
-                    .Text()
-                    .Or(ListOrIndexText)
-                    .Or(CurlyGroupText)
-                    .Or(GroupText)
-                    .Or(MathSymbol)
-                    .Or(StringLiteralQuoteUnTokenised)
-                    .Many()
-                    .Optional()
+            ListOrIndexText
+            .Or(CurlyGroupText)
+            .Or(GroupText)
+            .Or(MathSymbol)
+            .Or(StringLiteralQuoteUnTokenised)
+            .Or(Parse.AnyChar
+                .Except(Parse.Char('['))
+                .Except(Parse.Char(']'))
+                .Except(Parse.Char('{'))
+                .Except(Parse.Char('}'))
+                .Except(Parse.Char('('))
+                .Except(Parse.Char(')'))
+                .Except(Parse.Char(','))
+                .Except(Parse.Char('"'))
+                .Except(MathSymbol)
+                .Except(Parse.LineEnd)
+                .Many()
+                .Text())
+            .Many()
+            .Optional()
             select new HclUnquotedExpressionElement
             {
-                Value = start + string.Join("", content.GetOrDefault() ?? Enumerable.Empty<string>())
+                Value = start + string.Join(string.Empty, content.GetOrDefault() ?? Enumerable.Empty<string>())
             };
 
         /// <summary>
@@ -877,6 +879,19 @@ namespace Octopus.CoreParsers.Hcl
 
     static class HclSpracheExtensions
     {
+        /// <summary>
+        /// Like Token(), but whitespace is required
+        /// </summary>
+        public static Parser<T> RequiredToken<T>(this Parser<T> parser)
+        {
+            if (parser == null) throw new ArgumentNullException(nameof(parser));
+
+            return from leading in Parse.WhiteSpace.AtLeastOnce()
+                from item in parser
+                from trailing in Parse.WhiteSpace.AtLeastOnce()
+                select item;
+        }
+
         /// <summary>
         /// An option to Token() which does not consume line breaks
         /// </summary>

@@ -975,21 +975,6 @@ namespace Octopus.CoreParsers.Hcl
         }
 
         [Test]
-        public void MissingBraces()
-        {
-            try
-            {
-                var template = TerraformLoadTemplate("missing_braces.hcl");
-                var parsed = HclParser.HclTemplate.Parse(template);
-                throw new Exception("Parsing should have failed");
-            }
-            catch (ParseException)
-            {
-                // all good
-            }
-        }
-
-        [Test]
         public void Multiple()
         {
             var template = TerraformLoadTemplate("multiple.hcl");

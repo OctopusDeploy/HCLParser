@@ -22,10 +22,12 @@ namespace Octopus.CoreParsers.Hcl
         [TestCase("var.region == blah + 3 - 2 * 1")]
         [TestCase("var.manual_deploy_enabled ? \"STOP_DEPLOYMENT\" : \"CONTINUE_DEPLOYMENT\"")]
         [TestCase("\"a\" == \"a\"")]
-        public void TestText(string index)
+        [TestCase("(a + b =\n    c) +\n    ddd ?\n    \"e\" :\n    \"f\"", "(a + b =\n    c) + ddd ? \"e\" : \"f\"")]
+        [TestCase("a +\n b =\n c +\n d", "a + b = c + d")]
+        public void TestText(string index, string expected = null)
         {
             var result = HclParser.UnquotedContent.Parse(index);
-            result.ToString().Should().Be(index);
+            result.ToString().Should().Be(expected ?? index);
         }
 
         [TestCase("test = \"a\" == \"a\"")]
@@ -352,13 +354,13 @@ namespace Octopus.CoreParsers.Hcl
         }
 
         [Test]
-        [TestCase("hcl2objectproperty.txt", "vpc = object({\n    id = \"string\"\n    cidr_block = \"string\"\n})")]
-        [TestCase("hcl2objectproperty2.txt", "vpc = object({\n    id = \"string\"\n    cidr_block = \"string\"\n    vpc = object({\n        id = \"string\"\n        cidr_block = \"string\"\n    })\n})")]
+        [TestCase("hcl2objectproperty.txt", "vpc = object({id = \"string\", cidr_block = \"string\"})")]
+        [TestCase("hcl2objectproperty2.txt", "vpc = object({id = \"string\", cidr_block = \"string\", vpc = object({id = \"string\", cidr_block = \"string\"})})")]
         public void ObjectProperty(string file, string result)
         {
             var template = TerraformLoadTemplate(file, HCL2TemplateSamples);
             var parsed = HclParser.ElementTypedObjectProperty.Parse(template);
-            parsed.ToString().Should().Be(result);
+            parsed.ToString(-1).Should().Be(result);
         }
     }
 }

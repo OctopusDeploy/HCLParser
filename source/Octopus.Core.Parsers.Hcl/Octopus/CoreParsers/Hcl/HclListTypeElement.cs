@@ -10,10 +10,14 @@ namespace Octopus.CoreParsers.Hcl
 
         public override string ToString(bool naked, int indent)
         {
-            var indentString = GetIndent(indent);
-            return indentString + "list(\n" +
-                   string.Join("\n", Children?.Select(child => child.ToString(indent + 1)) ?? Enumerable.Empty<string>()) +
-                   "\n" + indentString + ")";
+            var indentString = indent == -1 ? string.Empty : GetIndent(indent);
+            var lineBreak = indent == -1 ? string.Empty : "\n";
+            var nextIndent = indent == -1 ? -1 : indent + 1;
+            var separator = indent == -1 ? ", " : "\n";
+
+            return indentString + "list(" + lineBreak +
+                   string.Join(separator, Children?.Select(child => child.ToString(nextIndent)) ?? Enumerable.Empty<string>()) +
+                   lineBreak + indentString + ")";
         }
     }
 }

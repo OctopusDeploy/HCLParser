@@ -8,18 +8,22 @@ namespace Octopus.CoreParsers.Hcl
     public class HclMapPropertyElement : HclMapElement
     {
         public override string Type => MapPropertyType;
-        
+
         public override string ToString(bool naked, int indent)
         {
             if (naked)
             {
                 return base.ToString(true, indent);
             }
-            
-            var indentString = GetIndent(indent);
-            return indentString + OriginalName + " = {\n" +
-                string.Join("\n", Children?.Select(child => child.ToString(indent + 1)) ?? Enumerable.Empty<string>()) +
-                "\n" + indentString + "}";
+
+            var indentString = indent == -1 ? string.Empty : GetIndent(indent);
+            var lineBreak = indent == -1 ? string.Empty : "\n";
+            var nextIndent = indent == -1 ? -1 : indent + 1;
+            var separator = indent == -1 ? ", " : "\n";
+
+            return indentString + OriginalName + " = {" + lineBreak +
+                string.Join(separator, Children?.Select(child => child.ToString(nextIndent)) ?? Enumerable.Empty<string>()) +
+                lineBreak + indentString + "}";
         }
     }
 }
