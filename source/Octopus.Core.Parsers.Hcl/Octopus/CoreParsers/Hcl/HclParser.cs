@@ -499,7 +499,7 @@ namespace Octopus.CoreParsers.Hcl
                         select new HclNumOrBoolElement{Value=boolean})
                 // A simple property ends at the end of the line, the end of the file, a comment, comma, end brackets, or comments
                 // Note that we don't consume delimiters like colons, brackets or comment starts
-                from endOfLine in Parse.LineTerminator.Or(Parse.Regex(@"[#{}\[\],]|//|/*")).Preview().Where(s => !s.IsEmpty)
+                from endOfLine in Parse.LineTerminator.Or(Parse.Regex(@"[#{}\[\],]|//|/\*")).Preview().Where(s => s.IsDefined)
                 select value
                 ).Token();
 
