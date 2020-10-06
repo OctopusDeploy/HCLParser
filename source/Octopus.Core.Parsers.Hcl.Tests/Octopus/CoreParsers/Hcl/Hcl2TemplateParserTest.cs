@@ -149,6 +149,7 @@ namespace Octopus.CoreParsers.Hcl
         }
 
         [TestCase("{for l in keys(local.id_context) : title(l) => local.id_context[l] if length(local.id_context[l]) > 0}")]
+        [TestCase("[for l in keys(local.id_context) : title(l) => local.id_context[l] if length(local.id_context[l]) > 0]")]
         public void TestForLoop(string index)
         {
             var result = HclParser.UnquotedContent.Parse(index);

@@ -424,7 +424,36 @@ namespace Octopus.CoreParsers.Hcl
             (StringLiteralQuoteUnTokenisedUnQuoted).Token();
 
         /// <summary>
-        /// Matches an unquoted value. New in 0.12
+        /// Matches an unquoted value. This is a very generalised parser designed to capture fields that can be
+        /// simple expressions like:
+        ///
+        /// var.vpc_cidr_block
+        ///
+        /// Complex expressions spanning multiple lines like:
+        ///
+        /// a == b
+        /// ? c
+        /// : d
+        ///
+        /// Mixtures of quoted and unquoted strings:
+        ///
+        /// "a" == b ? "ccc" : d + 1
+        ///
+        /// Inline lists or objects:
+        ///
+        /// "a" == b ? [var.vpc_cidr_block] : {var = "hi there"}
+        ///
+        /// For loops:
+        ///
+        /// [
+        /// for key, value in module.bootstrap.assets_dist :
+        /// format("##### %s\n%s", key, value)
+        /// ]
+        ///
+        /// This parser does not attempt to extract any individual elements out of the value (i.e. we are not building
+        /// a calculator here).
+        ///
+        /// New in 0.12
         /// </summary>
         public static readonly Parser<HclElement> UnquotedContent =
             /*
