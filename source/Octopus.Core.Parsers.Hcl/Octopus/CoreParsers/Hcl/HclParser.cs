@@ -499,7 +499,7 @@ namespace Octopus.CoreParsers.Hcl
                         select new HclNumOrBoolElement{Value=boolean})
                 // A simple property ends at the end of the line, the end of the file, a comment, comma, end brackets, or comments
                 // Note that we don't consume delimiters like colons, brackets or comment starts
-                from endOfLine in Parse.LineTerminator.Or(Parse.Regex(@"[#{}\[\],]|//|/\*")).Preview().Where(s => s.IsDefined)
+                from endOfLine in Parse.LineTerminator.Or(Parse.Regex(@"[#{}\[\],]|//|/\*")).RequiredPreview()
                 select value
                 ).Token();
 
@@ -884,10 +884,27 @@ namespace Octopus.CoreParsers.Hcl
         {
             if (parser == null) throw new ArgumentNullException(nameof(parser));
 
-            return from leading in Parse.WhiteSpace.Except(Parse.LineEnd).Optional()
+            return from leading in Parse.WhiteSpace.Except(Parse.LineEnd).Many()
                 from item in parser
-                from trailing in Parse.WhiteSpace.Except(Parse.LineEnd).Optional()
+                from trailing in Parse.WhiteSpace.Except(Parse.LineEnd).Many()
                 select item;
+        }
+
+        /// <summary>
+        /// Matches the parser, but does not consume the matched result. This is much like a positive lookahead
+        /// in a regex.
+        /// </summary>
+        public static Parser<T> RequiredPreview<T>(this Parser<T> parser)
+        {
+            if (parser == null)
+                throw new ArgumentNullException(nameof (parser));
+            return (i =>
+            {
+                IResult<T> result = parser(i);
+                return result.WasSuccessful
+                    ? Result.Success<T>(result.Value, i)
+                    : Result.Failure<T>(i, "Failed the preview", result.Expectations);
+            });
         }
     }
 
