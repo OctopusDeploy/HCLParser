@@ -396,6 +396,33 @@ namespace Octopus.CoreParsers.Hcl
             select mathOperator;
 
         /// <summary>
+        /// Match quoted string content, and inclde the quotes in the result. This is used to match quoted strings
+        /// in a larger unquoted property value.
+        /// </summary>
+        public static readonly Parser<string> StringLiteralQuoteUnTokenised =
+            from start in DelimiterQuote
+            from content in StringLiteralQuoteContent.Many().Optional()
+            from end in DelimiterQuote
+            select "\"" + string.Concat(content.GetOrDefault()) + "\"";
+
+        /// <summary>
+        /// Match quoted string content, and inclde the quotes in the result. This is used to build up string values,
+        /// so it is untokenized.
+        /// </summary>
+        public static readonly Parser<string> StringLiteralQuoteUnTokenisedUnQuoted =
+            from start in DelimiterQuote
+            from content in StringLiteralQuoteContent.Many().Optional()
+            from end in DelimiterQuote
+            select string.Concat(content.GetOrDefault());
+
+        /// <summary>
+        /// Matches multiple StringLiteralQuoteContent to make up the string. This is used to match block identifiers,
+        /// and so is a token.
+        /// </summary>
+        public static readonly Parser<string> StringLiteralQuote =
+            (StringLiteralQuoteUnTokenisedUnQuoted).Token();
+
+        /// <summary>
         /// Matches an unquoted value. New in 0.12
         /// </summary>
         public static readonly Parser<HclElement> UnquotedContent =
@@ -418,11 +445,12 @@ namespace Octopus.CoreParsers.Hcl
                 .Except(Parse.Char('<'))
                 .Except(Parse.Char('#'))
                 .Except(Parse.Char('"'))
-                .Except(Parse.Regex(@"\s"))
+                .Except(Parse.WhiteSpace)
                 .Once().Text()
                 .Or(GroupText)
                 .Or(ListOrIndexText)
                 .Or(CurlyGroupText)
+                .Or(StringLiteralQuoteUnTokenised)
             /*
              * Once we enter an unquoted string, we need to understand where the content ends.
              * We assume any opening bracket will have a matching closing bracket, and consume everything (line breaks
@@ -443,9 +471,9 @@ namespace Octopus.CoreParsers.Hcl
                     .Except(Parse.Char(')'))
                     .Except(Parse.Char(','))
                     .Except(Parse.Char('"'))
-                    .Except(Parse.Char(LineBreak))
-                        .Many()
-                        .Text()
+                    .Except(Parse.LineTerminator)
+                    .Many()
+                    .Text()
                     .Or(ListOrIndexText)
                     .Or(CurlyGroupText)
                     .Or(GroupText)
@@ -459,37 +487,21 @@ namespace Octopus.CoreParsers.Hcl
             };
 
         /// <summary>
-        /// Match quoted string content, and inclde the quotes in the result
-        /// </summary>
-        public static readonly Parser<string> StringLiteralQuoteUnTokenised =
-            from start in DelimiterQuote
-            from content in StringLiteralQuoteContent.Many().Optional()
-            from end in DelimiterQuote
-            select "\"" + string.Concat(content.GetOrDefault()) + "\"";
-
-
-        /// <summary>
-        /// Matches multiple StringLiteralQuoteContent to make up the string
-        /// </summary>
-        public static readonly Parser<string> StringLiteralQuote =
-            (from start in DelimiterQuote
-                from content in StringLiteralQuoteContent.Many().Optional()
-                from end in DelimiterQuote
-                select string.Concat(content.GetOrDefault())
-            ).Token();
-
-        /// <summary>
         /// Represents the various values that can be assigned to properties
         /// i.e. quoted text, numbers and booleans
         /// </summary>
         public static readonly Parser<HclElement> PropertyValue =
-            (from value in (from str in StringLiteralQuote
+            (from value in (from str in StringLiteralQuoteUnTokenisedUnQuoted.WithWhiteSpace()
                         select new HclStringElement{Value=str} as HclElement)
-                    .Or(from number in Parse.Regex(NumberRegex).Text()
+                    .Or(from number in Parse.Regex(NumberRegex).WithWhiteSpace()
                         select new HclNumOrBoolElement{Value=number})
-                    .Or(from boolean in Parse.Regex(TrueFalse).Text()
+                    .Or(from boolean in Parse.Regex(TrueFalse).WithWhiteSpace()
                         select new HclNumOrBoolElement{Value=boolean})
-                select value).Token();
+                // A simple property ends at the end of the line, the end of the file, a comment, comma, end brackets, or comments
+                // Note that we don't consume delimiters like colons, brackets or comment starts
+                from endOfLine in Parse.LineTerminator.Or(Parse.Regex(@"[#{}\[\],]|//|/*")).Preview().Where(s => !s.IsEmpty)
+                select value
+                ).Token();
 
         /// <summary>
         /// New in 0.12 - An primitive definition without quotes
@@ -872,9 +884,9 @@ namespace Octopus.CoreParsers.Hcl
         {
             if (parser == null) throw new ArgumentNullException(nameof(parser));
 
-            return from leading in Parse.WhiteSpace.Except(Parse.Char(HclParser.LineBreak)).Many()
+            return from leading in Parse.WhiteSpace.Except(Parse.LineEnd).Optional()
                 from item in parser
-                from trailing in Parse.WhiteSpace.Except(Parse.Char(HclParser.LineBreak)).Many()
+                from trailing in Parse.WhiteSpace.Except(Parse.LineEnd).Optional()
                 select item;
         }
     }

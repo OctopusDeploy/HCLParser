@@ -21,10 +21,52 @@ namespace Octopus.CoreParsers.Hcl
         [TestCase("var.region == blah")]
         [TestCase("var.region == blah + 3 - 2 * 1")]
         [TestCase("var.manual_deploy_enabled ? \"STOP_DEPLOYMENT\" : \"CONTINUE_DEPLOYMENT\"")]
+        [TestCase("\"a\" == \"a\"")]
         public void TestText(string index)
         {
             var result = HclParser.UnquotedContent.Parse(index);
             result.ToString().Should().Be(index);
+        }
+
+        [TestCase("test = \"a\" == \"a\"")]
+        public void TestTextAssignment(string index)
+        {
+            var result = HclParser.UnquotedNameUnquotedElementProperty.Parse(index);
+            result.ToString().Should().Be(index);
+        }
+
+        [TestCase("blah \"==\" {test = \"a\" == \"a\"}")]
+        [TestCase("blah \"==\" {test = \"a\"}")]
+        public void TestTextAssignmentInElement(string index)
+        {
+            var result = HclParser.NameValueElement.Parse(index);
+            result.ToString(-1).Should().Be(index);
+        }
+
+        [TestCase("\"a\"", "\"a\"")]
+        [TestCase("\"a\"  ", "\"a\"")]
+        public void TestStringLiteralSuccess(string index, string expected)
+        {
+            var result = HclParser.PropertyValue.Parse(index);
+            result.ToString().Should().Be(expected);
+
+        }
+
+        [TestCase("\"a\" something")]
+        [TestCase("\"a\" \"b\"")]
+        [TestCase("\"a\" == \"b\"")]
+        [TestCase("\"a\" ==")]
+        public void TestStringLiteralFailures(string index)
+        {
+            try
+            {
+                var result = HclParser.PropertyValue.Parse(index);
+                Assert.Fail("should have not parsed");
+            }
+            catch
+            {
+                // all ok
+            }
         }
 
         [TestCase("test = var.manual_deploy_enabled ? \"STOP_DEPLOYMENT\" : \"CONTINUE_DEPLOYMENT\"")]
@@ -120,6 +162,10 @@ namespace Octopus.CoreParsers.Hcl
             result.ToString(-1).Should().Be(expected);
         }
 
+        /// <summary>
+        /// A couple of specific examples to test the parser against. These live in files because modifying
+        /// line endings in strings is hard work.
+        /// </summary>
         [Test]
         [TestCase("hcl2example1.txt")]
         [TestCase("hcl2example2.txt")]
@@ -137,6 +183,9 @@ namespace Octopus.CoreParsers.Hcl
         [TestCase("hcl2example14.txt")]
         [TestCase("hcl2example15.txt")]
         [TestCase("hcl2example16.txt")]
+        [TestCase("hcl2example17.txt")]
+        [TestCase("hcl2example18.txt")]
+        [TestCase("hcl2example19.txt")]
         public void GenericExamples(string file)
         {
             var template = TerraformLoadTemplate(file, HCL2TemplateSamples);
@@ -189,6 +238,9 @@ namespace Octopus.CoreParsers.Hcl
             printed.Should().Be(reprinted);
         }
 
+        /// <summary>
+        /// 100 random terraform examples found on GitHub to test the parser on.
+        /// </summary>
         [TestCase("hcl2githubexample1.tf")]
         [TestCase("hcl2githubexample2.tf")]
         [TestCase("hcl2githubexample3.tf")]

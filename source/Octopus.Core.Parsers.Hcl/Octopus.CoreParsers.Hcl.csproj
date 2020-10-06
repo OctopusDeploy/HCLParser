@@ -9,7 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="Octopus.CoreUtilities" Version="1.1.2" />
-    <PackageReference Include="Sprache" Version="2.1.2" />
+    <PackageReference Include="Sprache" Version="2.3.1" />
   </ItemGroup>
   
   <ItemGroup>
