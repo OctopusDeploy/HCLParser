@@ -54,6 +54,56 @@ namespace Octopus.CoreParsers.Hcl
 
         }
 
+        [TestCase("object({name = \"string\", age = \"number\"})")]
+        [TestCase("object({name = \"string\", age = object({name = \"string\", age = \"number\"})})")]
+        [TestCase("object({name = \"string\", age = object({name = \"string\", age = \"number\"}), address = tuple([\"string\", object({name = \"string\", age = \"number\"})])})")]
+        public void ObjectTypeTest(string index)
+        {
+            var result = HclParser.ObjectTypeProperty.Parse(index);
+            result.ToString(-1).Should().Be(index);
+        }
+
+        [TestCase("tuple([\"string\", \"number\"])")]
+        [TestCase("tuple([\"string\", object({name = \"string\", age = \"number\"}), object({name = \"string\", age = object({name = \"string\", age = \"number\"}), address = tuple([\"string\", object({name = \"string\", age = \"number\"})])})])")]
+        public void TypleTypeTest(string index)
+        {
+            var result = HclParser.TupleTypeProperty.Parse(index);
+            result.ToString(-1).Should().Be(index);
+        }
+
+        [TestCase("list(\"string\")")]
+        [TestCase("list(\"number\")")]
+        [TestCase("list(\"any\")")]
+        [TestCase("list(\"bool\")")]
+        [TestCase("list(object({name = \"string\", age = \"number\"}))")]
+        public void ListTypeTest(string index)
+        {
+            var result = HclParser.ListTypeProperty.Parse(index);
+            result.ToString(-1).Should().Be(index);
+        }
+
+        [TestCase("map(\"string\")")]
+        [TestCase("map(\"number\")")]
+        [TestCase("map(\"bool\")")]
+        [TestCase("map(\"any\")")]
+        [TestCase("map(object({name = \"string\", age = \"number\"}))")]
+        public void MapTypeTest(string index)
+        {
+            var result = HclParser.MapTypeProperty.Parse(index);
+            result.ToString(-1).Should().Be(index);
+        }
+
+        [TestCase("set(\"string\")")]
+        [TestCase("set(\"number\")")]
+        [TestCase("set(\"bool\")")]
+        [TestCase("set(\"any\")")]
+        [TestCase("set(object({name = \"string\", age = \"number\"}))")]
+        public void SetTypeTest(string index)
+        {
+            var result = HclParser.SetTypeProperty.Parse(index);
+            result.ToString(-1).Should().Be(index);
+        }
+
         [TestCase("\"a\" something")]
         [TestCase("\"a\" \"b\"")]
         [TestCase("\"a\" == \"b\"")]
