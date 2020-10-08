@@ -107,6 +107,7 @@ namespace Octopus.CoreParsers.Hcl
         /// The name of the element, #COMMENT for comments, or #ROOT for the
         /// root document element.
         /// e.g. variable, resource
+        /// This is also the name of a property, e.g. "tags" for the property "tags" = ["a", "b"]
         /// </summary>
         public virtual string Name { get; set; }
 
@@ -134,6 +135,10 @@ namespace Octopus.CoreParsers.Hcl
         /// <summary>
         /// The value of the element, or the comment contents
         /// e.g. my_variable, aws_instance
+        /// This is also the value of a property
+        /// e.g. "myvalue" for "myproperty" = "myvalue".
+        /// For complex properties, like lists, objects, maps etc, Value is the string representation of those objects
+        /// e.g. "[1, 2]" for "myproperty" = [1, 2].
         /// </summary>
         public virtual string Value { get; set; }
 

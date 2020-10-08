@@ -1,4 +1,5 @@
-﻿using FluentAssertions;
+﻿using System.Linq;
+using FluentAssertions;
 using NUnit.Framework;
 using Sprache;
 
@@ -225,6 +226,30 @@ namespace Octopus.CoreParsers.Hcl
         {
             var result = HclParser.MapValue.Parse(index);
             result.ToString(-1).Should().Be(expected);
+        }
+
+        /// <summary>
+        /// This is how the old parser found the types of variables
+        /// </summary>
+        /// <param name="index"></param>
+        /// <param name="expected"></param>
+        [TestCase("variable \"image_id\" {type = \"string\", description = \"The id of the machine image (AMI) to use for the server.\"}", "string")]
+        [TestCase("variable \"availability_zone_names\" {type = \"list\", default = [\"us-west-1a\"]}", "list")]
+        [TestCase("variable \"tags\" {description = \"Tags applied to all Airflow related objects\", type = \"map\", default = {\"Project\" = \"Airflow\"}}", "map")]
+        public void TestOldVariableTypes(string index, string expected)
+        {
+            var result = HclParser.HclTemplate.Parse(index);
+            result.Child.Children.First(child => child.Name == "type").Value.Should().Be(expected);
+        }
+
+        [TestCase("variable \"image_id\" {type = string, description = \"The id of the machine image (AMI) to use for the server.\"}", "string")]
+        [TestCase("variable \"availability_zone_names\" {type = list, default = [\"us-west-1a\"]}", "list")]
+        [TestCase("variable \"availability_zone_names\" {type = list(\"string\"), default = [\"us-west-1a\"]}", "list(\"string\")")]
+        [TestCase("variable \"tags\" {description = \"Tags applied to all Airflow related objects\", type = map, default = {\"Project\" = \"Airflow\"}}", "map")]
+        public void TestNewVariableTypes(string index, string expected)
+        {
+            var result = HclParser.HclTemplate.Parse(index);
+            result.Child.Children.First(child => child.Name == "type").Value.Should().Be(expected);
         }
 
         /// <summary>

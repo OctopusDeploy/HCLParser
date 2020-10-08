@@ -9,6 +9,8 @@ namespace Octopus.CoreParsers.Hcl
     {
         public override string Type => MapType;
 
+        public override string Value => ToString(-1);
+
         public override string ToString(bool naked, int indent)
         {
             var indentString = GetIndent(indent);

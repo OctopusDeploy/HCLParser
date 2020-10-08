@@ -8,6 +8,8 @@ namespace Octopus.CoreParsers.Hcl
 
         public override string ProcessedValue => Value ?? "";
 
+        public override string Value => ToString(-1);
+
         public override string ToString(bool naked, int indent)
         {
             var indentString = indent == -1 ? string.Empty : GetIndent(indent);

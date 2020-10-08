@@ -9,6 +9,10 @@ namespace Octopus.CoreParsers.Hcl
     {
         public override string Type => MapPropertyType;
 
+        public override string Value => "{" +
+            string.Join(",", Children?.Select(child => child.ToString(-1)) ?? Enumerable.Empty<string>()) +
+                "}";
+
         public override string ToString(bool naked, int indent)
         {
             if (naked)

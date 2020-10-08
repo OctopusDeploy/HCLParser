@@ -9,6 +9,8 @@ namespace Octopus.CoreParsers.Hcl
     {
         public override string Type => TypePropertyType;
 
+        public override string Value => string.Join(",", Children?.Select(child => child.ToString(-1)) ?? Enumerable.Empty<string>());
+
         public override string ToString(bool naked, int indent)
         {
             var indentString = indent == -1 ? string.Empty : GetIndent(indent);
