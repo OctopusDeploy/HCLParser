@@ -384,7 +384,7 @@ namespace Octopus.CoreParsers.Hcl
                     .Or(Parse.String("<"))
                     .Or(Parse.String(">"))
                     .Or(Parse.String(">="))
-                    .Or(Parse.String(">="))
+                    .Or(Parse.String("<="))
                     .Or(Parse.String("!="))
                     .Or(Parse.String("=="))
                     .Or(Parse.String("&&"))
