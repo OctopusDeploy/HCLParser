@@ -1185,5 +1185,27 @@ namespace Octopus.CoreParsers.Hcl
             HclParser.NumberRegex.Match("0x1").Value.Should().Match("0x1");
             HclParser.NumberRegex.Match("-0x1").Value.Should().Match("-0x1");
         }
+
+        [Test]
+        public void TestVariableParsing()
+        {
+            var template = @"variable ""test"" {
+                type = ""string""
+            }
+
+            variable ""list"" {
+                type = ""list""
+            }
+
+            variable ""map"" {
+                type = ""map""
+            }";
+
+            var result = HclParser.HclTemplate.Parse(template);
+            result.Children.Count().Should().Be(3);
+            result.Children.First(c => c.Value == "test").Child.Value.Should().Be("string");
+            result.Children.First(c => c.Value == "list").Child.Value.Should().Be("list");
+            result.Children.First(c => c.Value == "map").Child.Value.Should().Be("map");
+        }
     }
 }
