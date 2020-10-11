@@ -281,12 +281,31 @@ namespace Octopus.CoreParsers.Hcl
 
         [TestCase("variable \"engine_version\" {type = string , default = \"4.0.10\", description = \"Redis engine version\" }", "4.0.10")]
         [TestCase("variable \"transit_encryption_enabled\" {\ntype = bool\ndefault = true\ndescription = \"Enable TLS\"\n}", "true")]
+        [TestCase("variable \"images\" {\ntype = map\ndefault = {\nus-east-1 = \"image-1234\"\nus-west-2 = \"image-4567\"\n}\n}", "{us-east-1 = \"image-1234\", us-west-2 = \"image-4567\"}")]
         public void TestVariableValues(string index, string expected)
         {
             var result = HclParser.HclTemplate.Parse(index);
             result.Child.Children.First(child => child.Name == "default").Value.Should().Be(expected);
             // The original HCL version 1 parser treated the "naked" option on the ToString() method as a way of getting the value.
             result.Child.Children.First(child => child.Name == "default").ToString(true, -1).Should().Be(expected);
+        }
+
+
+        [TestCase("blah = {\ntype = map\ndefault = {\nus-east-1 = \"image-1234\"\nus-west-2 = \"image-4567\"\n}\n}", "{type = map, default = {us-east-1 = \"image-1234\", us-west-2 = \"image-4567\"}}")]
+        public void TestMapPropertyParsing(string index, string expected)
+        {
+            var result = HclParser.ElementMapProperty.Parse(index);
+            result.Value.Should().Be(expected);
+            result.ToString(true, -1).Should().Be(expected);
+        }
+
+
+        [TestCase("{\ntype = map\ndefault = {\nus-east-1 = \"image-1234\"\nus-west-2 = \"image-4567\"\n}\n}", "{type = map, default = {us-east-1 = \"image-1234\", us-west-2 = \"image-4567\"}}")]
+        public void TestMapParsing(string index, string expected)
+        {
+            var result = HclParser.MapValue.Parse(index);
+            result.Value.Should().Be(expected);
+            result.ToString(true, -1).Should().Be(expected);
         }
 
         /// <summary>

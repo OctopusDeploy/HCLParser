@@ -840,7 +840,6 @@ namespace Octopus.CoreParsers.Hcl
         public static readonly Parser<HclElement> NameElement =
             from dynamic in Dynamic.Optional()
             from name in Identifier.Or(StringLiteralQuote)
-            from eql in Equal.Optional()
             from lbracket in LeftCurly
             from properties in Properties.Optional()
             from rbracket in RightCurly
