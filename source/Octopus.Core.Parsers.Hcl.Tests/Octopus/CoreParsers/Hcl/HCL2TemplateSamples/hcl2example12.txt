@@ -1,0 +1,13 @@
+﻿block_list {
+  block_type = "log_file"
+
+  object {
+    attr "level" {
+      type = string
+    }
+    attr "filename" {
+      type     = string
+      required = true
+    }
+  }
+}

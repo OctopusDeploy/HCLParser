@@ -9,7 +9,7 @@ namespace Octopus.CoreParsers.Hcl
     public class HclListElement : HclElement
     {
         public override string Type => ListType;
-        
+
         public override string ToString(bool naked, int indent)
         {
             var indentString = GetIndent(indent);
@@ -20,22 +20,23 @@ namespace Octopus.CoreParsers.Hcl
         {
             var indentString = GetIndent(indent);
             var nextIndentString = GetIndent(indent + 1);
+            var lineBreak = indent == -1 ? string.Empty : "\n";
 
-            var startArray = "[\n" +
+            var startArray = "[" + lineBreak +
                 Children?.Aggregate("", (total, child) =>
                 {
                     // Comments appear without a comma at the end
                     var suffix = child.Type != CommentType ? ", " : "";
-                    return total + nextIndentString + child.ToString() + suffix + "\n";
+                    return total + nextIndentString + child.ToString() + suffix + lineBreak;
                 });
-            
+
             // Retain the comma at the end (if one exists) if the last element is a comment
             if (Children?.LastOrDefault()?.Type != CommentType)
             {
                 startArray = new Regex(",$").Replace(startArray.TrimEnd(), "");
             }
-            
-            return startArray + "\n" + indentString + "]";
+
+            return startArray + lineBreak + indentString + "]";
         }
     }
 }

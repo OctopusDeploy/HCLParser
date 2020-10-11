@@ -1,0 +1,10 @@
+﻿function "upper" {
+  params = [str]
+  result = upper(str)
+}
+
+function "min" {
+  params         = []
+  variadic_param = nums
+  result         = min(nums...)
+}

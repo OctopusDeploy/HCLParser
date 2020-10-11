@@ -1,0 +1,26 @@
+﻿# Testing complex nested types
+
+variable "network" {
+  subnets = set(object({
+    id         = string
+    cidr_block = string
+  }))
+    blah = list(object({
+       id         = string
+       cidr_block = string
+     }))
+    blah2 = map(object({
+       id         = string
+       cidr_block = string
+     }))
+  vpc = tuple(["string", "number", "bool", set("string")])
+  vpc = tuple(["string", "number", "bool", set(object({
+                                               id         = string
+                                               cidr_block = string
+                                             }))])
+ type = map(object({
+    network_number    = number
+    availability_zone = string
+    tags              = map(string)
+  }))
+}

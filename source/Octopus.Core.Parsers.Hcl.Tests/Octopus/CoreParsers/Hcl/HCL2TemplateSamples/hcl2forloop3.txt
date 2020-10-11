@@ -1,0 +1,1 @@
+﻿[for o in var.list : o.interfaces[0].name[1]]

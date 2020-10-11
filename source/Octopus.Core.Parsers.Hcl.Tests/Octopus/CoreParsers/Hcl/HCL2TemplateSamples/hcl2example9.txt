@@ -1,0 +1,5 @@
+﻿block_attrs {
+  block_type   = "variables"
+  element_type = string
+  required     = false
+}

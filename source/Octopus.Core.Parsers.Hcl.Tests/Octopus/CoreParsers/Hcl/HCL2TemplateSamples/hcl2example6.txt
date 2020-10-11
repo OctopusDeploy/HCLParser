@@ -1,0 +1,9 @@
+﻿transform {
+  attr {
+    name = "size_in_mb"
+    type = number
+  }
+
+  # Convert result to a size in bytes
+  result = nested * 1024 * 1024
+}

@@ -1,0 +1,11 @@
+﻿block_map {
+  block_type = "log_file"
+  labels = ["filename"]
+
+  object {
+    attr "level" {
+      type     = string
+      required = true
+    }
+  }
+}

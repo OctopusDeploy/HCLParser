@@ -1,0 +1,9 @@
+﻿default {
+  attr {
+    name = "private"
+    type = bool
+  }
+  literal {
+    value = false
+  }
+}

@@ -1,0 +1,3 @@
+﻿literal {
+  value = "hello world"
+}

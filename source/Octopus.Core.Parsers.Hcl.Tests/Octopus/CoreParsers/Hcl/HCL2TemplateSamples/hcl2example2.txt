@@ -1,0 +1,12 @@
+﻿module "network" {
+  source = "./modules/network"
+
+  base_network_cidr = "10.0.0.0/8"
+}
+
+module "consul_cluster" {
+  source = "./modules/aws-consul-cluster"
+
+  vpc     = module.network.vpc
+  subnets = module.network.subnets
+}

@@ -1,0 +1,13 @@
+﻿object {
+  attr "name" {
+    type = string
+  }
+  block "address" {
+    object {
+      attr "street" {
+        type = string
+      }
+      # ...
+    }
+  }
+}

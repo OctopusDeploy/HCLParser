@@ -1,5 +1,5 @@
 variable "aws_amis" {
-  default : {
+  default = {
     eu-west-1 : "ami-674cbc1e"
     us-east-1 : "ami-1d4e7a66"
     us-west-1 : "ami-969ab1f6"
