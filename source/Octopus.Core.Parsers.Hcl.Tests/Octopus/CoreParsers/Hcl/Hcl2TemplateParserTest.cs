@@ -217,6 +217,29 @@ namespace Octopus.CoreParsers.Hcl
             result2.Value.Should().Be(index);
         }
 
+        [TestCase("*")]
+        [TestCase("/")]
+        [TestCase("%")]
+        [TestCase("+")]
+        [TestCase("-")]
+        [TestCase("<")]
+        [TestCase(">")]
+        [TestCase(">=")]
+        [TestCase("<=")]
+        [TestCase("!=")]
+        [TestCase("==")]
+        [TestCase("&&")]
+        [TestCase("||")]
+        [TestCase("?")]
+        [TestCase(":")]
+        [TestCase("=")]
+        public void TestLogicSymbolInLineBreaks(string input)
+        {
+            var inputWithLineBreak = "a starting string " + input + "\nsome other text";
+            var result2 = HclParser.UnquotedContent.Parse(inputWithLineBreak);
+            result2.Value.Should().Be(inputWithLineBreak.Replace("\n", " "));
+        }
+
         [TestCase("{for l in keys(local.id_context) : title(l) => local.id_context[l] if length(local.id_context[l]) > 0}")]
         [TestCase("[for l in keys(local.id_context) : title(l) => local.id_context[l] if length(local.id_context[l]) > 0]")]
         public void TestForLoop(string index)
