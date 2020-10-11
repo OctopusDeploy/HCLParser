@@ -10,7 +10,6 @@ namespace Octopus.CoreParsers.Hcl
 
         public override string ToString(bool naked, int indent)
         {
-            var indentString = GetIndent(indent);
             return "\"" + Value + "\"";
         }
     }

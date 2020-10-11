@@ -26,7 +26,7 @@ namespace Octopus.CoreParsers.Hcl
             var indentString = GetIndent(indent);
             var children = string.Join(
                 string.Empty,
-                Children?.Select(child => child.ToString(-1)) ?? Enumerable.Empty<string>());
+                Children?.Select(child => child.ToString(naked, -1)) ?? Enumerable.Empty<string>());
             if (naked)
             {
                 return children;

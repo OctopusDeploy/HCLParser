@@ -279,6 +279,16 @@ namespace Octopus.CoreParsers.Hcl
             result.Child.Children.First(child => child.Name == "type").Value.Should().Be(expected);
         }
 
+        [TestCase("variable \"engine_version\" {type = string , default = \"4.0.10\", description = \"Redis engine version\" }", "4.0.10")]
+        [TestCase("variable \"transit_encryption_enabled\" {\ntype = bool\ndefault = true\ndescription = \"Enable TLS\"\n}", "true")]
+        public void TestVariableValues(string index, string expected)
+        {
+            var result = HclParser.HclTemplate.Parse(index);
+            result.Child.Children.First(child => child.Name == "default").Value.Should().Be(expected);
+            // The original HCL version 1 parser treated the "naked" option on the ToString() method as a way of getting the value.
+            result.Child.Children.First(child => child.Name == "default").ToString(true, -1).Should().Be(expected);
+        }
+
         /// <summary>
         /// A couple of specific examples to test the parser against. These live in files because modifying
         /// line endings in strings is hard work.
