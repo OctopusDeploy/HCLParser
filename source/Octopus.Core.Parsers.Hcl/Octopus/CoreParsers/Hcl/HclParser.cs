@@ -339,22 +339,30 @@ namespace Octopus.CoreParsers.Hcl
         public static readonly Parser<string> ListOrIndexText =
             from open in Parse.Char('[')
             from content in
-                (Parse.AnyChar
+            StringLiteralQuoteUnTokenised
+                .Or(Parse.AnyChar
                     .Except(Parse.Char('['))
                     .Except(Parse.Char(']'))
-                    .Many().Text()
-                    .Or(ListOrIndexText)).Many()
+                    .Except(Parse.Char('"'))
+                    .Except(Parse.Char('\''))
+                    .Many().Text())
+                .Or(ListOrIndexText)
+                .Many()
+                .Optional()
             from close in Parse.Char(']')
-            select open + string.Join(string.Empty, content) + close;
+            select open + string.Join(string.Empty, content.GetOrDefault() ?? Enumerable.Empty<string>()) + close;
 
         public static readonly Parser<string> GroupText =
             from open in Parse.Char('(').Token()
             from content in
                 LogicSymbol
+                    .Or(StringLiteralQuoteUnTokenised)
                     .Or(Parse.AnyChar
-                    .Except(Parse.Char('('))
-                    .Except(Parse.Char(')'))
-                    .Many().Text())
+                        .Except(Parse.Char('('))
+                        .Except(Parse.Char(')'))
+                        .Except(Parse.Char('"'))
+                        .Except(Parse.Char('\''))
+                        .Many().Text())
                     .Or(GroupText)
                     .Many()
                     .Optional()
@@ -364,13 +372,18 @@ namespace Octopus.CoreParsers.Hcl
         public static readonly Parser<string> CurlyGroupText =
             from open in Parse.Char('{').Token()
             from content in
-                Parse.AnyChar
-                    .Except(Parse.Char('{'))
-                    .Except(Parse.Char('}'))
-                    .Many().Text()
-                    .Or(GroupText).Many()
+                StringLiteralQuoteUnTokenised
+                    .Or(Parse.AnyChar
+                        .Except(Parse.Char('{'))
+                        .Except(Parse.Char('}'))
+                        .Except(Parse.Char('"'))
+                        .Except(Parse.Char('\''))
+                        .Many().Text())
+                    .Or(CurlyGroupText)
+                    .Many()
+                    .Optional()
             from close in Parse.Char('}')
-            select open + string.Join(string.Empty, content) + close;
+            select open + string.Join(string.Empty, content.GetOrDefault() ?? Enumerable.Empty<string>()) + close;
 
         /// <summary>
         /// Math symbols. These are used to indicate places in unquoted values where line breaks can be placed.
@@ -409,7 +422,7 @@ namespace Octopus.CoreParsers.Hcl
             select "\"" + string.Concat(content.GetOrDefault()) + "\"";
 
         /// <summary>
-        /// Match quoted string content, and inclde the quotes in the result. This is used to build up string values,
+        /// Match quoted string content, and include the quotes in the result. This is used to build up string values,
         /// so it is untokenized.
         /// </summary>
         public static readonly Parser<string> StringLiteralQuoteUnTokenisedUnQuoted =

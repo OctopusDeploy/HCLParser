@@ -182,6 +182,8 @@ namespace Octopus.CoreParsers.Hcl
         }
 
         [TestCase("(hi)")]
+        [TestCase("(h(hi)i)")]
+        [TestCase("(h \"unbalanced in a string (\" i)")]
         public void TestGroupText(string index)
         {
             var result = HclParser.GroupText.Parse(index);
@@ -192,6 +194,8 @@ namespace Octopus.CoreParsers.Hcl
         }
 
         [TestCase("{hi}")]
+        [TestCase("{h{hi}i}")]
+        [TestCase("{h \"unbalanced in a string {\" i}")]
         public void TestCurlyGroupText(string index)
         {
             var result = HclParser.CurlyGroupText.Parse(index);
@@ -202,6 +206,8 @@ namespace Octopus.CoreParsers.Hcl
         }
 
         [TestCase("[hi]")]
+        [TestCase("[h[hi]i]")]
+        [TestCase("[h \"unbalanced in a string [\" i]")]
         public void TestListOrIndexText(string index)
         {
             var result = HclParser.ListOrIndexText.Parse(index);
