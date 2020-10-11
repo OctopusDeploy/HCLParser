@@ -18,6 +18,11 @@ namespace Octopus.CoreParsers.Hcl
     /// </summary>
     public class HclParser
     {
+        private const string StringKeyword = "string";
+        private const string BoolKeyword = "bool";
+        private const string NumberKeyword = "number";
+        private const string AnyKeyword = "any";
+
         /// <summary>
         /// New in 0.12 - the ability to mark a block as dynamic
         /// </summary>
@@ -48,20 +53,17 @@ namespace Octopus.CoreParsers.Hcl
         /// <summary>
         /// Represents the equals token
         /// </summary>
-        public static readonly Parser<char> Equal =
-        (
-            from equal in Parse.Char('=')
-            select equal
-        ).WithWhiteSpace();
+        public static readonly Parser<char> Equal = Parse.Char('=').WithWhiteSpace();
 
         /// <summary>
         /// Represents the colon token. This is new in 0.12 as a way of defining maps.
         /// </summary>
-        public static readonly Parser<char> Colon =
-        (
-            from equal in Parse.Char(':')
-            select equal
-        ).WithWhiteSpace();
+        public static readonly Parser<char> Colon = Parse.Char(':').WithWhiteSpace();
+
+        /// <summary>
+        /// An equals sign or colon can be used for assigment in maps.
+        /// </summary>
+        public static readonly Parser<char> EqualsOrColon = Equal.Or(Colon);
 
         /// <summary>
         /// Open bracket
@@ -348,7 +350,7 @@ namespace Octopus.CoreParsers.Hcl
         public static readonly Parser<string> GroupText =
             from open in Parse.Char('(').Token()
             from content in
-                MathSymbol
+                LogicSymbol
                     .Or(Parse.AnyChar
                     .Except(Parse.Char('('))
                     .Except(Parse.Char(')'))
@@ -374,7 +376,7 @@ namespace Octopus.CoreParsers.Hcl
         /// Math symbols. These are used to indicate places in unquoted values where line breaks can be placed.
         /// New in 0.12
         /// </summary>
-        public static readonly Parser<string> MathSymbol =
+        public static readonly Parser<string> LogicSymbol =
             from mathOperator in
                 Parse.String("*")
                     .Or(Parse.String("/"))
@@ -475,6 +477,7 @@ namespace Octopus.CoreParsers.Hcl
                 .Except(Parse.Char('<'))
                 .Except(Parse.Char('#'))
                 .Except(Parse.Char('"'))
+                .Except(Parse.Char('\''))
                 .Except(Parse.WhiteSpace)
                 .Once().Text()
                 .Or(GroupText)
@@ -495,7 +498,7 @@ namespace Octopus.CoreParsers.Hcl
             ListOrIndexText
             .Or(CurlyGroupText)
             .Or(GroupText)
-            .Or(MathSymbol)
+            .Or(LogicSymbol)
             .Or(StringLiteralQuoteUnTokenised)
             .Or(Parse.AnyChar
                 .Except(Parse.Char('['))
@@ -506,7 +509,7 @@ namespace Octopus.CoreParsers.Hcl
                 .Except(Parse.Char(')'))
                 .Except(Parse.Char(','))
                 .Except(Parse.Char('"'))
-                .Except(MathSymbol)
+                .Except(LogicSymbol)
                 .Except(Parse.LineEnd)
                 .Many()
                 .Text())
@@ -530,7 +533,7 @@ namespace Octopus.CoreParsers.Hcl
                         select new HclNumOrBoolElement{Value=boolean})
                 // A simple property ends at the end of the line, the end of the file, a comment, comma, end brackets, or comments
                 // Note that we don't consume delimiters like colons, brackets or comment starts
-                from endOfLine in Parse.LineTerminator.Or(Parse.Regex(@"[#{}\[\],]|//|/\*")).RequiredPreview()
+                from endOfLine in Parse.LineTerminator.Or(Parse.Regex(@"[#{}\[\],]|//|/\*")).PreviewRequired()
                 select value
                 ).Token();
 
@@ -538,10 +541,10 @@ namespace Octopus.CoreParsers.Hcl
         /// New in 0.12 - An primitive definition without quotes
         /// </summary>
         public static readonly Parser<HclElement> UnquotedPrimitiveTypeProperty =
-            (from value in Parse.String("string")
-                    .Or(Parse.String("number"))
-                    .Or(Parse.String("bool"))
-                    .Or(Parse.String("any"))
+            (from value in Parse.String(StringKeyword)
+                    .Or(Parse.String(NumberKeyword))
+                    .Or(Parse.String(BoolKeyword))
+                    .Or(Parse.String(AnyKeyword))
                     .Text()
                 select new HclPrimitiveTypeElement {Value = value}).Token();
 
@@ -550,10 +553,10 @@ namespace Octopus.CoreParsers.Hcl
         /// </summary>
         public static readonly Parser<HclElement> QuotedPrimitiveTypeProperty =
             (from startQuote in DelimiterQuote
-                    from value in Parse.String("string")
-                        .Or(Parse.String("number"))
-                        .Or(Parse.String("bool"))
-                        .Or(Parse.String("any"))
+                    from value in Parse.String(StringKeyword)
+                        .Or(Parse.String(NumberKeyword))
+                        .Or(Parse.String(BoolKeyword))
+                        .Or(Parse.String(AnyKeyword))
                         .Text()
                     from endQuote in DelimiterQuote
                 select new HclPrimitiveTypeElement {Value = value}).Token();
@@ -703,7 +706,7 @@ namespace Octopus.CoreParsers.Hcl
         /// </summary>
         public static readonly Parser<HclElement> UnquotedNameUnquotedElementProperty =
             from name in Identifier
-            from eql in Equal.Or(Colon)
+            from eql in EqualsOrColon
             from value in UnquotedContent
             select new HclUnquotedExpressionPropertyElement {Name = name, Child = value, NameQuoted = false};
 
@@ -713,7 +716,7 @@ namespace Octopus.CoreParsers.Hcl
         /// </summary>
         public static readonly Parser<HclElement> QuotedNameUnquotedElementProperty =
             from name in StringLiteralQuote
-            from eql in Equal.Or(Colon)
+            from eql in EqualsOrColon
             from value in UnquotedContent
             select new HclUnquotedExpressionPropertyElement {Name = name, Child = value, NameQuoted = true};
 
@@ -723,7 +726,7 @@ namespace Octopus.CoreParsers.Hcl
         /// </summary>
         public static readonly Parser<HclElement> ElementProperty =
             from name in Identifier
-            from eql in Equal.Or(Colon)
+            from eql in EqualsOrColon
             from value in PropertyValue
             select new HclSimplePropertyElement {Name = name, Child = value, NameQuoted = false};
 
@@ -733,7 +736,7 @@ namespace Octopus.CoreParsers.Hcl
         /// </summary>
         public static readonly Parser<HclElement> QuotedElementProperty =
             from name in StringLiteralQuote
-            from eql in Equal.Or(Colon)
+            from eql in EqualsOrColon
             from value in PropertyValue
             select new HclSimplePropertyElement {Name = name, Child = value, NameQuoted = true};
 
@@ -938,7 +941,7 @@ namespace Octopus.CoreParsers.Hcl
         /// Matches the parser, but does not consume the matched result. This is much like a positive lookahead
         /// in a regex.
         /// </summary>
-        public static Parser<T> RequiredPreview<T>(this Parser<T> parser)
+        public static Parser<T> PreviewRequired<T>(this Parser<T> parser)
         {
             if (parser == null)
                 throw new ArgumentNullException(nameof (parser));
