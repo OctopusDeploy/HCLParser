@@ -64,7 +64,6 @@ Task("__Default")
     .IsDependentOn("__UpdateAssemblyVersionInformation")
     .IsDependentOn("__Build")
     .IsDependentOn("__Pack")
-	.IsDependentOn("__Publish")
 	.IsDependentOn("__CopyToLocalPackages");
 
 Task("__Clean")
@@ -115,25 +114,6 @@ Task("__Pack")
             OutputDirectory = artifactsDir
         });
     });
-
-Task("__Publish")
-    .WithCriteria(BuildSystem.IsRunningOnTeamCity)
-    .Does(() =>
-{
-	
-	NuGetPush($"{artifactsDir}/Octopus.CoreParsers.Hcl.{nugetVersion}.nupkg", new NuGetPushSettings {
-		Source = "https://f.feedz.io/octopus-deploy/dependencies/nuget",
-		ApiKey = EnvironmentVariable("FeedzIoApiKey")
-	});
-	
-    if (gitVersionInfo.PreReleaseLabel == "")
-    {
-        NuGetPush($"{artifactsDir}/Octopus.CoreParsers.Hcl.{nugetVersion}.nupkg", new NuGetPushSettings {
-            Source = "https://www.nuget.org/api/v2/package",
-            ApiKey = EnvironmentVariable("NuGetApiKey")
-        });
-    }
-});
 
 Task("__CopyToLocalPackages")
     .WithCriteria(BuildSystem.IsLocalBuild)
