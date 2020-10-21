@@ -100,7 +100,19 @@ Task("__Build")
     DotNetBuild(solutionToBuild, settings => settings.SetConfiguration(configuration));
 });
 
+Task("__Test")
+    .IsDependentOn("__Build")
+    .Does(() =>
+    {
+        DotNetCoreTest("source", new DotNetCoreTestSettings
+        {
+            Configuration = configuration,
+            NoBuild = true
+        });
+    });
+
 Task("__Pack")
+    .IsDependentOn("__Test")
     .Does(() => {
         var nugetPackDir = Path.Combine(publishDir, "nuget");
         var nuspecFile = "Octopus.CoreParsers.Hcl.nuspec";
