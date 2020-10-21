@@ -1,7 +1,8 @@
 //////////////////////////////////////////////////////////////////////
 // TOOLS
 //////////////////////////////////////////////////////////////////////
-#tool "nuget:?package=GitVersion.CommandLine&prerelease"
+#module nuget:?package=Cake.DotNetTool.Module&version=0.4.0
+#tool "dotnet:?package=GitVersion.Tool&version=5.3.5"
 
 using Path = System.IO.Path;
 using IO = System.IO;
