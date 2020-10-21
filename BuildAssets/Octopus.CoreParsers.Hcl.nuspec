@@ -13,7 +13,7 @@
     <releaseNotes></releaseNotes>
     <language>en-US</language>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <licenseUrl>https://github.com/OctopusDeploy/HCLParser/blob/master/LICENSE.txt</licenseUrl>
+    <licenseUrl>https://github.com/OctopusDeploy/HCLParser/blob/main/LICENSE.txt</licenseUrl>
     <projectUrl>https://github.com/OctopusDeploy/HCLParser</projectUrl>
     <iconUrl>http://i.octopusdeploy.com/resources/Avatar3_360.png</iconUrl>
     <tags>automation deployment</tags>
