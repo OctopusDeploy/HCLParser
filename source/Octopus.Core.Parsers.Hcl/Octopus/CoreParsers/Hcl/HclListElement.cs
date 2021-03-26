@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 namespace Octopus.CoreParsers.Hcl
 {
     /// <summary>
-    /// Represents a list
+    ///     Represents a list
     /// </summary>
     public class HclListElement : HclElement
     {
@@ -25,18 +25,16 @@ namespace Octopus.CoreParsers.Hcl
             var lineBreak = indent == -1 ? string.Empty : "\n";
 
             var startArray = "[" + lineBreak +
-                Children?.Aggregate("", (total, child) =>
-                {
-                    // Comments appear without a comma at the end
-                    var suffix = child.Type != CommentType ? ", " : "";
-                    return total + nextIndentString + child.ToString() + suffix + lineBreak;
-                });
+                             Children?.Aggregate("", (total, child) =>
+                             {
+                                 // Comments appear without a comma at the end
+                                 var suffix = child.Type != CommentType ? ", " : "";
+                                 return total + nextIndentString + child + suffix + lineBreak;
+                             });
 
             // Retain the comma at the end (if one exists) if the last element is a comment
             if (Children?.LastOrDefault()?.Type != CommentType)
-            {
                 startArray = new Regex(",$").Replace(startArray.TrimEnd(), "");
-            }
 
             return startArray + lineBreak + indentString + "]";
         }

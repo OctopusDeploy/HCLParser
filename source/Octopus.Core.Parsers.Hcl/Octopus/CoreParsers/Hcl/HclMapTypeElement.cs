@@ -18,7 +18,8 @@ namespace Octopus.CoreParsers.Hcl
             var separator = indent == -1 ? ", " : "\n";
 
             return indentString + "map(" + lineBreak +
-                   string.Join(separator, Children?.Select(child => child.ToString(nextIndent)) ?? Enumerable.Empty<string>()) +
+                   string.Join(separator,
+                       Children?.Select(child => child.ToString(nextIndent)) ?? Enumerable.Empty<string>()) +
                    lineBreak + indentString + ")";
         }
     }

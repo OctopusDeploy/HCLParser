@@ -3,13 +3,14 @@
 namespace Octopus.CoreParsers.Hcl
 {
     /// <summary>
-    /// Represents a string assigned to a property
+    ///     Represents a string assigned to a property
     /// </summary>
     public class HclTypePropertyElement : HclElement
     {
         public override string Type => TypePropertyType;
 
-        public override string Value => string.Join(",", Children?.Select(child => child.ToString(-1)) ?? Enumerable.Empty<string>());
+        public override string Value =>
+            string.Join(",", Children?.Select(child => child.ToString(-1)) ?? Enumerable.Empty<string>());
 
         public override string ToString(bool naked, int indent)
         {

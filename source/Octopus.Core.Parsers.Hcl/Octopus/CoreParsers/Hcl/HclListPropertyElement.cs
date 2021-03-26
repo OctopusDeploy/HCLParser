@@ -1,10 +1,7 @@
-﻿using System.Linq;
-using System.Text.RegularExpressions;
-
-namespace Octopus.CoreParsers.Hcl
+﻿namespace Octopus.CoreParsers.Hcl
 {
     /// <summary>
-    /// Represents a list assigned to a property
+    ///     Represents a list assigned to a property
     /// </summary>
     public class HclListPropertyElement : HclListElement
     {
@@ -14,10 +11,7 @@ namespace Octopus.CoreParsers.Hcl
 
         public override string ToString(bool naked, int indent)
         {
-            if (naked)
-            {
-                return base.ToString(true, indent);
-            }
+            if (naked) return base.ToString(true, indent);
 
             var indentString = GetIndent(indent);
             return indentString + OriginalName + " = " + PrintArray(indent);

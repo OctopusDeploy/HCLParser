@@ -1,6 +1,4 @@
-﻿using System.Linq;
-
-namespace Octopus.CoreParsers.Hcl
+﻿namespace Octopus.CoreParsers.Hcl
 {
     public class HclPrimitiveTypeElement : HclElement
     {

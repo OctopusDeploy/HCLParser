@@ -1,5 +1,4 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 
 namespace Octopus.CoreParsers.Hcl
 {
@@ -19,7 +18,8 @@ namespace Octopus.CoreParsers.Hcl
             var separator = indent == -1 ? ", " : "\n";
 
             return "set(" + lineBreak +
-                   string.Join(separator, Children?.Select(child => child.ToString(nextIndent)) ?? Enumerable.Empty<string>()) +
+                   string.Join(separator,
+                       Children?.Select(child => child.ToString(nextIndent)) ?? Enumerable.Empty<string>()) +
                    lineBreak + indentString + ")";
         }
     }

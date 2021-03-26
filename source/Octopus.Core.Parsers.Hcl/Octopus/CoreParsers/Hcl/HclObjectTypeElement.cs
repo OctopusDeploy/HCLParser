@@ -1,10 +1,9 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 
 namespace Octopus.CoreParsers.Hcl
 {
     /// <summary>
-    /// Represents a map assigned to a property
+    ///     Represents a map assigned to a property
     /// </summary>
     public class HclObjectTypeElement : HclElement
     {
@@ -20,7 +19,8 @@ namespace Octopus.CoreParsers.Hcl
             var separator = indent == -1 ? ", " : "\n";
 
             return "object({" + lineBreak +
-                   string.Join(separator, Children?.Select(child => child.ToString(nextIndent)) ?? Enumerable.Empty<string>()) +
+                   string.Join(separator,
+                       Children?.Select(child => child.ToString(nextIndent)) ?? Enumerable.Empty<string>()) +
                    lineBreak + indentString + "})";
         }
     }

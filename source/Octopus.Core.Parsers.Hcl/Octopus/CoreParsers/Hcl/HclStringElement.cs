@@ -1,9 +1,7 @@
-﻿using System.Linq;
-
-namespace Octopus.CoreParsers.Hcl
+﻿namespace Octopus.CoreParsers.Hcl
 {
     /// <summary>
-    /// Represents a string
+    ///     Represents a string
     /// </summary>
     public class HclStringElement : HclElement
     {
@@ -18,10 +16,7 @@ namespace Octopus.CoreParsers.Hcl
              *
              * It is better to use the Value property for this use case, but this logic is retained for compatibility.
              */
-            if (naked)
-            {
-                return ProcessedValue;
-            }
+            if (naked) return ProcessedValue;
 
             var indentString = GetIndent(indent);
             return indentString + "\"" + EscapeQuotes(ProcessedValue) + "\"";

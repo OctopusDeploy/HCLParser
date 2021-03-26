@@ -3,22 +3,21 @@
 namespace Octopus.CoreParsers.Hcl
 {
     /// <summary>
-    /// Represents a map assigned to a property
+    ///     Represents a map assigned to a property
     /// </summary>
     public class HclMapPropertyElement : HclMapElement
     {
         public override string Type => MapPropertyType;
 
         public override string Value => "{" +
-            string.Join(", ", Children?.Select(child => child.ToString(-1)) ?? Enumerable.Empty<string>()) +
-                "}";
+                                        string.Join(", ",
+                                            Children?.Select(child => child.ToString(-1)) ??
+                                            Enumerable.Empty<string>()) +
+                                        "}";
 
         public override string ToString(bool naked, int indent)
         {
-            if (naked)
-            {
-                return base.ToString(true, indent);
-            }
+            if (naked) return base.ToString(true, indent);
 
             var indentString = indent == -1 ? string.Empty : GetIndent(indent);
             var lineBreak = indent == -1 ? string.Empty : "\n";
@@ -26,8 +25,9 @@ namespace Octopus.CoreParsers.Hcl
             var separator = indent == -1 ? ", " : "\n";
 
             return indentString + OriginalName + " = {" + lineBreak +
-                string.Join(separator, Children?.Select(child => child.ToString(nextIndent)) ?? Enumerable.Empty<string>()) +
-                lineBreak + indentString + "}";
+                   string.Join(separator,
+                       Children?.Select(child => child.ToString(nextIndent)) ?? Enumerable.Empty<string>()) +
+                   lineBreak + indentString + "}";
         }
     }
 }

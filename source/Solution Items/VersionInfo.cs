@@ -8,7 +8,7 @@ using System.Reflection;
 
 namespace Octopus
 {
-    static class GitVersionInformation
+    internal static class GitVersionInformation
     {
         public static string BranchName = "UNKNOWNBRANCH";
         public static string NuGetVersion = "0.0.0-local";

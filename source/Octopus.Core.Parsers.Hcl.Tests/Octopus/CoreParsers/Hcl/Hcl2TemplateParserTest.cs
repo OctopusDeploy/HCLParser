@@ -8,15 +8,7 @@ namespace Octopus.CoreParsers.Hcl
     [TestFixture]
     public class Hcl2TemplateParserTest : TerraformTemplateLoader
     {
-        const string HCL2TemplateSamples = "HCL2TemplateSamples";
-
-        [Test]
-        public void ExampleFromDocs()
-        {
-            var template = TerraformLoadTemplate("hcl2examplefromdocs.tf", HCL2TemplateSamples);
-            var parsed = HclParser.HclTemplate.Parse(template);
-            parsed.Children.Should().HaveCount(3);
-        }
+        private const string HCL2TemplateSamples = "HCL2TemplateSamples";
 
         [TestCase("var.region == \"\"")]
         [TestCase("var.region == blah")]
@@ -52,12 +44,12 @@ namespace Octopus.CoreParsers.Hcl
         {
             var result = HclParser.PropertyValue.Parse(index);
             result.ToString().Should().Be(expected);
-
         }
 
         [TestCase("object({name = \"string\", age = \"number\"})")]
         [TestCase("object({name = \"string\", age = object({name = \"string\", age = \"number\"})})")]
-        [TestCase("object({name = \"string\", age = object({name = \"string\", age = \"number\"}), address = tuple([\"string\", object({name = \"string\", age = \"number\"})])})")]
+        [TestCase(
+            "object({name = \"string\", age = object({name = \"string\", age = \"number\"}), address = tuple([\"string\", object({name = \"string\", age = \"number\"})])})")]
         public void ObjectTypeTest(string index)
         {
             var result = HclParser.ObjectTypeProperty.Parse(index);
@@ -65,7 +57,8 @@ namespace Octopus.CoreParsers.Hcl
         }
 
         [TestCase("tuple([\"string\", \"number\"])")]
-        [TestCase("tuple([\"string\", object({name = \"string\", age = \"number\"}), object({name = \"string\", age = object({name = \"string\", age = \"number\"}), address = tuple([\"string\", object({name = \"string\", age = \"number\"})])})])")]
+        [TestCase(
+            "tuple([\"string\", object({name = \"string\", age = \"number\"}), object({name = \"string\", age = object({name = \"string\", age = \"number\"}), address = tuple([\"string\", object({name = \"string\", age = \"number\"})])})])")]
         public void TypleTypeTest(string index)
         {
             var result = HclParser.TupleTypeProperty.Parse(index);
@@ -138,42 +131,6 @@ namespace Octopus.CoreParsers.Hcl
             result.ToString(-1).Should().Be(index);
         }
 
-        [Test]
-        [TestCase("{\n  \"Name\" = \"${var.network_name}-ip\"\n}")]
-        public void TestMapValue(string index)
-        {
-            var result = HclParser.MapValue.Parse(index);
-            result.ToString().Should().Be(index);
-        }
-
-        [Test]
-        [TestCase("\"Name\" = \"${var.network_name}-ip\"")]
-        public void TestQuotedElementProperty(string index)
-        {
-            var result = HclParser.QuotedElementProperty.Parse(index);
-            result.ToString().Should().Be(index);
-        }
-
-        [Test]
-        [TestCase("${var.network_name}-ip")]
-        public void TestStringLiteralQuote(string index)
-        {
-            var result = HclParser.StringLiteralQuoteContent.Parse(index);
-            result.Should().Be(index);
-        }
-
-        [Test]
-        [TestCase("locals {\n  tags = merge(\"var.tags\")\n}")]
-        [TestCase("locals {\n  tags = merge(\"var.tags1\", \"var.tags2\")\n}")]
-        [TestCase("locals {\n  tags = merge(var.tags, {\"Name\" = \"${var.network_name}-ip\"})\n}")]
-        [TestCase("locals {\n  tags = merge({\"Name\" = \"${var.network_name}-ip\"})\n}")]
-        [TestCase("locals {\n  depends_on = [\n    aws_s3_bucket.bucket\n  ]\n}")]
-        public void TestAssignmentInElement(string index)
-        {
-            var result = HclParser.NameElement.Parse(index);
-            result.ToString().Should().Be(index);
-        }
-
         [TestCase("depends_on = [\n  aws_s3_bucket.bucket\n]")]
         public void TestListAssignment(string index)
         {
@@ -240,8 +197,10 @@ namespace Octopus.CoreParsers.Hcl
             result2.Value.Should().Be(inputWithLineBreak.Replace("\n", " "));
         }
 
-        [TestCase("{for l in keys(local.id_context) : title(l) => local.id_context[l] if length(local.id_context[l]) > 0}")]
-        [TestCase("[for l in keys(local.id_context) : title(l) => local.id_context[l] if length(local.id_context[l]) > 0]")]
+        [TestCase(
+            "{for l in keys(local.id_context) : title(l) => local.id_context[l] if length(local.id_context[l]) > 0}")]
+        [TestCase(
+            "[for l in keys(local.id_context) : title(l) => local.id_context[l] if length(local.id_context[l]) > 0]")]
         public void TestForLoop(string index)
         {
             var result = HclParser.UnquotedContent.Parse(index);
@@ -258,30 +217,43 @@ namespace Octopus.CoreParsers.Hcl
         }
 
         /// <summary>
-        /// This is how the old parser found the types of variables
+        ///     This is how the old parser found the types of variables
         /// </summary>
         /// <param name="index"></param>
         /// <param name="expected"></param>
-        [TestCase("variable \"image_id\" {type = \"string\", description = \"The id of the machine image (AMI) to use for the server.\"}", "string")]
+        [TestCase(
+            "variable \"image_id\" {type = \"string\", description = \"The id of the machine image (AMI) to use for the server.\"}",
+            "string")]
         [TestCase("variable \"availability_zone_names\" {type = \"list\", default = [\"us-west-1a\"]}", "list")]
-        [TestCase("variable \"tags\" {description = \"Tags applied to all Airflow related objects\", type = \"map\", default = {\"Project\" = \"Airflow\"}}", "map")]
+        [TestCase(
+            "variable \"tags\" {description = \"Tags applied to all Airflow related objects\", type = \"map\", default = {\"Project\" = \"Airflow\"}}",
+            "map")]
         public void TestOldVariableTypes(string index, string expected)
         {
             var result = HclParser.HclTemplate.Parse(index);
             result.Child.Children.First(child => child.Name == "type").Value.Should().Be(expected);
         }
 
-        [TestCase("variable \"availability_zone_names\" {type = list(\"string\"), default = [\"us-west-1a\"]}", "list(\"string\")")]
-        [TestCase("variable \"tags\" {description = \"Tags applied to all Airflow related objects\", type = map(\"string\"), default = {\"Project\" = \"Airflow\"}}", "map(\"string\")")]
+        [TestCase("variable \"availability_zone_names\" {type = list(\"string\"), default = [\"us-west-1a\"]}",
+            "list(\"string\")")]
+        [TestCase(
+            "variable \"tags\" {description = \"Tags applied to all Airflow related objects\", type = map(\"string\"), default = {\"Project\" = \"Airflow\"}}",
+            "map(\"string\")")]
         public void TestNewVariableTypes(string index, string expected)
         {
             var result = HclParser.HclTemplate.Parse(index);
             result.Child.Children.First(child => child.Name == "type").Value.Should().Be(expected);
         }
 
-        [TestCase("variable \"engine_version\" {type = string , default = \"4.0.10\", description = \"Redis engine version\" }", "4.0.10")]
-        [TestCase("variable \"transit_encryption_enabled\" {\ntype = bool\ndefault = true\ndescription = \"Enable TLS\"\n}", "true")]
-        [TestCase("variable \"images\" {\ntype = map\ndefault = {\nus-east-1 = \"image-1234\"\nus-west-2 = \"image-4567\"\n}\n}", "{us-east-1 = \"image-1234\", us-west-2 = \"image-4567\"}")]
+        [TestCase(
+            "variable \"engine_version\" {type = string , default = \"4.0.10\", description = \"Redis engine version\" }",
+            "4.0.10")]
+        [TestCase(
+            "variable \"transit_encryption_enabled\" {\ntype = bool\ndefault = true\ndescription = \"Enable TLS\"\n}",
+            "true")]
+        [TestCase(
+            "variable \"images\" {\ntype = map\ndefault = {\nus-east-1 = \"image-1234\"\nus-west-2 = \"image-4567\"\n}\n}",
+            "{us-east-1 = \"image-1234\", us-west-2 = \"image-4567\"}")]
         public void TestVariableValues(string index, string expected)
         {
             var result = HclParser.HclTemplate.Parse(index);
@@ -291,7 +263,8 @@ namespace Octopus.CoreParsers.Hcl
         }
 
 
-        [TestCase("blah = {\ntype = map\ndefault = {\nus-east-1 = \"image-1234\"\nus-west-2 = \"image-4567\"\n}\n}", "{type = map, default = {us-east-1 = \"image-1234\", us-west-2 = \"image-4567\"}}")]
+        [TestCase("blah = {\ntype = map\ndefault = {\nus-east-1 = \"image-1234\"\nus-west-2 = \"image-4567\"\n}\n}",
+            "{type = map, default = {us-east-1 = \"image-1234\", us-west-2 = \"image-4567\"}}")]
         public void TestMapPropertyParsing(string index, string expected)
         {
             var result = HclParser.ElementMapProperty.Parse(index);
@@ -300,7 +273,8 @@ namespace Octopus.CoreParsers.Hcl
         }
 
 
-        [TestCase("{\ntype = map\ndefault = {\nus-east-1 = \"image-1234\"\nus-west-2 = \"image-4567\"\n}\n}", "{type = map, default = {us-east-1 = \"image-1234\", us-west-2 = \"image-4567\"}}")]
+        [TestCase("{\ntype = map\ndefault = {\nus-east-1 = \"image-1234\"\nus-west-2 = \"image-4567\"\n}\n}",
+            "{type = map, default = {us-east-1 = \"image-1234\", us-west-2 = \"image-4567\"}}")]
         public void TestMapParsing(string index, string expected)
         {
             var result = HclParser.MapValue.Parse(index);
@@ -309,83 +283,7 @@ namespace Octopus.CoreParsers.Hcl
         }
 
         /// <summary>
-        /// A couple of specific examples to test the parser against. These live in files because modifying
-        /// line endings in strings is hard work.
-        /// </summary>
-        [Test]
-        [TestCase("hcl2example1.txt")]
-        [TestCase("hcl2example2.txt")]
-        [TestCase("hcl2example3.txt")]
-        [TestCase("hcl2example4.txt")]
-        [TestCase("hcl2example5.txt")]
-        [TestCase("hcl2example6.txt")]
-        [TestCase("hcl2example7.txt")]
-        [TestCase("hcl2example8.txt")]
-        [TestCase("hcl2example9.txt")]
-        [TestCase("hcl2example10.txt")]
-        [TestCase("hcl2example11.txt")]
-        [TestCase("hcl2example12.txt")]
-        [TestCase("hcl2example13.txt")]
-        [TestCase("hcl2example14.txt")]
-        [TestCase("hcl2example15.txt")]
-        [TestCase("hcl2example16.txt")]
-        [TestCase("hcl2example17.txt")]
-        [TestCase("hcl2example18.txt")]
-        [TestCase("hcl2example19.txt")]
-        public void GenericExamples(string file)
-        {
-            var template = TerraformLoadTemplate(file, HCL2TemplateSamples);
-            var parsed = HclParser.HclTemplate.Parse(template);
-            var printed = parsed.ToString();
-            var reparsed = HclParser.HclTemplate.Parse(printed);
-            var reprinted = reparsed.ToString();
-            printed.Should().Be(reprinted);
-        }
-
-        /// <summary>
-        /// Examples from https://github.com/hashicorp/hcl/tree/hcl2/hclwrite/fuzz
-        /// </summary>
-        [Test]
-        [TestCase("attr.hcl")]
-        [TestCase("attr-expr.hcl")]
-        [TestCase("attr-literal.hcl")]
-        [TestCase("block-attrs.hcl")]
-        [TestCase("block-comment.hcl")]
-        [TestCase("block-empty.hcl")]
-        [TestCase("block-nested.hcl")]
-        [TestCase("complex.hcl")]
-        [TestCase("empty.hcl")]
-        [TestCase("escape-dollar.hcl")]
-        [TestCase("escape-newline.hcl")]
-        [TestCase("function-call.hcl")]
-        [TestCase("hash-comment.hcl")]
-        [TestCase("index.hcl")]
-        [TestCase("int.hcl")]
-        [TestCase("int-tmpl.hcl")]
-        [TestCase("just-interp.hcl")]
-        [TestCase("literal.hcl")]
-        [TestCase("lots-of-comments.hcl")]
-        [TestCase("slash-comment.hcl")]
-        [TestCase("splat-attr.hcl")]
-        [TestCase("splat-dot-full.hcl")]
-        [TestCase("splat-full.hcl")]
-        [TestCase("traversal-dot-index.hcl")]
-        [TestCase("traversal-dot-index-terminal.hcl")]
-        [TestCase("traversal-index.hcl")]
-        [TestCase("utf8.hcl")]
-        [TestCase("var.hcl")]
-        public void CorpusExamples(string file)
-        {
-            var template = TerraformLoadTemplate(file, "corpus");
-            var parsed = HclParser.HclTemplate.Parse(template);
-            var printed = parsed.ToString();
-            var reparsed = HclParser.HclTemplate.Parse(printed);
-            var reprinted = reparsed.ToString();
-            printed.Should().Be(reprinted);
-        }
-
-        /// <summary>
-        /// 100 random terraform examples found on GitHub to test the parser on.
+        ///     100 random terraform examples found on GitHub to test the parser on.
         /// </summary>
         [TestCase("hcl2githubexample1.tf")]
         [TestCase("hcl2githubexample2.tf")]
@@ -497,14 +395,135 @@ namespace Octopus.CoreParsers.Hcl
             printed.Should().Be(reprinted);
         }
 
+        /// <summary>
+        ///     Examples from https://github.com/hashicorp/hcl/tree/hcl2/hclwrite/fuzz
+        /// </summary>
+        [Test]
+        [TestCase("attr.hcl")]
+        [TestCase("attr-expr.hcl")]
+        [TestCase("attr-literal.hcl")]
+        [TestCase("block-attrs.hcl")]
+        [TestCase("block-comment.hcl")]
+        [TestCase("block-empty.hcl")]
+        [TestCase("block-nested.hcl")]
+        [TestCase("complex.hcl")]
+        [TestCase("empty.hcl")]
+        [TestCase("escape-dollar.hcl")]
+        [TestCase("escape-newline.hcl")]
+        [TestCase("function-call.hcl")]
+        [TestCase("hash-comment.hcl")]
+        [TestCase("index.hcl")]
+        [TestCase("int.hcl")]
+        [TestCase("int-tmpl.hcl")]
+        [TestCase("just-interp.hcl")]
+        [TestCase("literal.hcl")]
+        [TestCase("lots-of-comments.hcl")]
+        [TestCase("slash-comment.hcl")]
+        [TestCase("splat-attr.hcl")]
+        [TestCase("splat-dot-full.hcl")]
+        [TestCase("splat-full.hcl")]
+        [TestCase("traversal-dot-index.hcl")]
+        [TestCase("traversal-dot-index-terminal.hcl")]
+        [TestCase("traversal-index.hcl")]
+        [TestCase("utf8.hcl")]
+        [TestCase("var.hcl")]
+        public void CorpusExamples(string file)
+        {
+            var template = TerraformLoadTemplate(file, "corpus");
+            var parsed = HclParser.HclTemplate.Parse(template);
+            var printed = parsed.ToString();
+            var reparsed = HclParser.HclTemplate.Parse(printed);
+            var reprinted = reparsed.ToString();
+            printed.Should().Be(reprinted);
+        }
+
+        [Test]
+        public void ExampleFromDocs()
+        {
+            var template = TerraformLoadTemplate("hcl2examplefromdocs.tf", HCL2TemplateSamples);
+            var parsed = HclParser.HclTemplate.Parse(template);
+            parsed.Children.Should().HaveCount(3);
+        }
+
+        /// <summary>
+        ///     A couple of specific examples to test the parser against. These live in files because modifying
+        ///     line endings in strings is hard work.
+        /// </summary>
+        [Test]
+        [TestCase("hcl2example1.txt")]
+        [TestCase("hcl2example2.txt")]
+        [TestCase("hcl2example3.txt")]
+        [TestCase("hcl2example4.txt")]
+        [TestCase("hcl2example5.txt")]
+        [TestCase("hcl2example6.txt")]
+        [TestCase("hcl2example7.txt")]
+        [TestCase("hcl2example8.txt")]
+        [TestCase("hcl2example9.txt")]
+        [TestCase("hcl2example10.txt")]
+        [TestCase("hcl2example11.txt")]
+        [TestCase("hcl2example12.txt")]
+        [TestCase("hcl2example13.txt")]
+        [TestCase("hcl2example14.txt")]
+        [TestCase("hcl2example15.txt")]
+        [TestCase("hcl2example16.txt")]
+        [TestCase("hcl2example17.txt")]
+        [TestCase("hcl2example18.txt")]
+        [TestCase("hcl2example19.txt")]
+        public void GenericExamples(string file)
+        {
+            var template = TerraformLoadTemplate(file, HCL2TemplateSamples);
+            var parsed = HclParser.HclTemplate.Parse(template);
+            var printed = parsed.ToString();
+            var reparsed = HclParser.HclTemplate.Parse(printed);
+            var reprinted = reparsed.ToString();
+            printed.Should().Be(reprinted);
+        }
+
         [Test]
         [TestCase("hcl2objectproperty.txt", "vpc = object({id = \"string\", cidr_block = \"string\"})")]
-        [TestCase("hcl2objectproperty2.txt", "vpc = object({id = \"string\", cidr_block = \"string\", vpc = object({id = \"string\", cidr_block = \"string\"})})")]
+        [TestCase("hcl2objectproperty2.txt",
+            "vpc = object({id = \"string\", cidr_block = \"string\", vpc = object({id = \"string\", cidr_block = \"string\"})})")]
         public void ObjectProperty(string file, string result)
         {
             var template = TerraformLoadTemplate(file, HCL2TemplateSamples);
             var parsed = HclParser.ElementTypedObjectProperty.Parse(template);
             parsed.ToString(-1).Should().Be(result);
+        }
+
+        [Test]
+        [TestCase("locals {\n  tags = merge(\"var.tags\")\n}")]
+        [TestCase("locals {\n  tags = merge(\"var.tags1\", \"var.tags2\")\n}")]
+        [TestCase("locals {\n  tags = merge(var.tags, {\"Name\" = \"${var.network_name}-ip\"})\n}")]
+        [TestCase("locals {\n  tags = merge({\"Name\" = \"${var.network_name}-ip\"})\n}")]
+        [TestCase("locals {\n  depends_on = [\n    aws_s3_bucket.bucket\n  ]\n}")]
+        public void TestAssignmentInElement(string index)
+        {
+            var result = HclParser.NameElement.Parse(index);
+            result.ToString().Should().Be(index);
+        }
+
+        [Test]
+        [TestCase("{\n  \"Name\" = \"${var.network_name}-ip\"\n}")]
+        public void TestMapValue(string index)
+        {
+            var result = HclParser.MapValue.Parse(index);
+            result.ToString().Should().Be(index);
+        }
+
+        [Test]
+        [TestCase("\"Name\" = \"${var.network_name}-ip\"")]
+        public void TestQuotedElementProperty(string index)
+        {
+            var result = HclParser.QuotedElementProperty.Parse(index);
+            result.ToString().Should().Be(index);
+        }
+
+        [Test]
+        [TestCase("${var.network_name}-ip")]
+        public void TestStringLiteralQuote(string index)
+        {
+            var result = HclParser.StringLiteralQuoteContent.Parse(index);
+            result.Should().Be(index);
         }
     }
 }

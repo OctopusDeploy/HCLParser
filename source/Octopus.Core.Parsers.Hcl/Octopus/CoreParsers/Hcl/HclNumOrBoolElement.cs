@@ -1,7 +1,7 @@
 ﻿namespace Octopus.CoreParsers.Hcl
 {
     /// <summary>
-    /// Represents a string
+    ///     Represents a string
     /// </summary>
     public class HclNumOrBoolElement : HclElement
     {

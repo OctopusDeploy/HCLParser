@@ -3,13 +3,15 @@
         "aws_instance": {
             "db": {
                 "vpc": "foo",
-                "provisioner": [{
-                    "file": {
-                        "source": "foo",
-                        "destination": "bar"
+                "provisioner": [
+                    {
+                        "file": {
+                            "source": "foo",
+                            "destination": "bar"
+                        }
                     }
-                }]
+                ]
             }
-		}
-	}
+        }
+    }
 }

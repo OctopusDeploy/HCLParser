@@ -1,7 +1,7 @@
 {
-  "module": {
-    "app": {
-      "foo": null
+    "module": {
+        "app": {
+            "foo": null
+        }
     }
-  }
 }

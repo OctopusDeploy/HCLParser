@@ -3,7 +3,7 @@
 namespace Octopus.CoreParsers.Hcl
 {
     /// <summary>
-    /// Represents the document root
+    ///     Represents the document root
     /// </summary>
     public class HclRootElement : HclElement
     {

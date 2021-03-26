@@ -1,7 +1,7 @@
 ﻿namespace Octopus.CoreParsers.Hcl
 {
     /// <summary>
-    /// Represents the collection of values that can make up an unquoted property value
+    ///     Represents the collection of values that can make up an unquoted property value
     /// </summary>
     public class HclUnquotedExpressionElement : HclElement
     {

@@ -3,7 +3,7 @@
 namespace Octopus.CoreParsers.Hcl
 {
     /// <summary>
-    /// Represents a map
+    ///     Represents a map
     /// </summary>
     public class HclMapElement : HclElement
     {
@@ -19,8 +19,9 @@ namespace Octopus.CoreParsers.Hcl
             var separator = indent == -1 ? ", " : "\n";
 
             return indentString + "{" + lineBreak +
-                string.Join(separator, Children?.Select(child => child.ToString(nextIndent)) ?? Enumerable.Empty<string>()) +
-                lineBreak + indentString + "}";
+                   string.Join(separator,
+                       Children?.Select(child => child.ToString(nextIndent)) ?? Enumerable.Empty<string>()) +
+                   lineBreak + indentString + "}";
         }
     }
 }

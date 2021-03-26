@@ -10,35 +10,32 @@ namespace Octopus.CoreParsers.Hcl
     public class HclHereDocElement : HclElement
     {
         /// <summary>
-        /// true if this heredoc is a trimmed version, and false otherwise
+        ///     true if this heredoc is a trimmed version, and false otherwise
         /// </summary>
         public bool Trimmed { get; set; }
 
         /// <summary>
-        /// The Heredoc marker e.g. EOF
+        ///     The Heredoc marker e.g. EOF
         /// </summary>
         public string Marker { get; set; }
 
         public override string Type => HeredocStringType;
 
         /// <summary>
-        /// Returns the original heredoc if it is not trimmed, or the trimmed version
+        ///     Returns the original heredoc if it is not trimmed, or the trimmed version
         /// </summary>
         public override string ProcessedValue
         {
             get
             {
-                if (!Trimmed)
-                {
-                    return Value;
-                }
+                if (!Trimmed) return Value;
 
                 return Value?.Split('\n')
                     .Select(value => value.TrimStart())
                     .Aggregate("", (total, current) => total + "\n" + current);
             }
         }
-        
+
         public override string ToString(bool naked, int indent)
         {
             var indentString = GetIndent(indent);
