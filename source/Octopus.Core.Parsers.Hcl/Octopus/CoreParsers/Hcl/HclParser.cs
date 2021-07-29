@@ -220,6 +220,8 @@ namespace Octopus.CoreParsers.Hcl
                 .Or(SingleEscapeQuote)
                 .Or(EscapedDelimiterInterpolation)
                 .Or(DoubleEscapedDelimiterInterpolation)
+                .Or(EscapedDelimiterStartCurly)
+                .Or(EscapedDelimiterEndCurly)
                 .Or(SimpleLiteralQuote).Many()
             select curly.GetOrDefault() + Regex.Unescape(string.Concat(content));
 
