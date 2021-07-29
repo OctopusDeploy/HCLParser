@@ -1,4 +1,4 @@
-﻿﻿#https://octopus.zendesk.com/agent/tickets/72890
+﻿#https://octopus.zendesk.com/agent/tickets/72890
 a = "{{123}}"
 b = "{{"
 c = "}}"
