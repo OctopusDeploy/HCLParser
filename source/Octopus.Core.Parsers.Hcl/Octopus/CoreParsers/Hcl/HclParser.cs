@@ -23,7 +23,7 @@ namespace Octopus.CoreParsers.Hcl
         /// <summary>
         ///     The \n char
         /// </summary>
-        public const char LineBreak = (char) 10;
+        public const char LineBreak = (char)10;
 
         /// <summary>
         ///     New in 0.12 - the ability to mark a block as dynamic
@@ -260,7 +260,7 @@ namespace Octopus.CoreParsers.Hcl
                     .Or(Parse.Char(LineBreak))
                     .Many().Text()
                 from last in Parse.String("*/")
-                select new HclMultiLineCommentElement {Value = content}).Token().Named("Multiline Comment");
+                select new HclMultiLineCommentElement { Value = content }).Token().Named("Multiline Comment");
 
         /// <summary><![CDATA[
         /// Represents a HereDoc e.g.
@@ -309,7 +309,7 @@ namespace Octopus.CoreParsers.Hcl
         (
             from open in ForwardSlashCommentStart.Or(HashCommentStart)
             from content in Parse.AnyChar.Except(Parse.Char(LineBreak)).Many().Text().Optional()
-            select new HclCommentElement {Value = content.GetOrDefault()}
+            select new HclCommentElement { Value = content.GetOrDefault() }
         ).Token().Named("Single line comment");
 
         public static readonly Parser<string> IdentifierPlain =
@@ -523,11 +523,11 @@ namespace Octopus.CoreParsers.Hcl
         /// </summary>
         public static readonly Parser<HclElement> PropertyValue =
             (from value in (from str in StringLiteralQuoteUnTokenisedUnQuoted.WithWhiteSpace()
-                        select new HclStringElement {Value = str} as HclElement)
+                        select new HclStringElement { Value = str } as HclElement)
                     .Or(from number in Parse.Regex(NumberRegex).WithWhiteSpace()
-                        select new HclNumOrBoolElement {Value = number})
+                        select new HclNumOrBoolElement { Value = number })
                     .Or(from boolean in Parse.Regex(TrueFalse).WithWhiteSpace()
-                        select new HclNumOrBoolElement {Value = boolean})
+                        select new HclNumOrBoolElement { Value = boolean })
                 // A simple property ends at the end of the line, the end of the file, a comment, comma, end brackets, or comments
                 // Note that we don't consume delimiters like colons, brackets or comment starts
                 from endOfLine in Parse.LineTerminator.Or(Parse.Regex(@"[#{}\[\],]|//|/\*")).PreviewRequired()
@@ -543,7 +543,7 @@ namespace Octopus.CoreParsers.Hcl
                     .Or(Parse.String(BoolKeyword))
                     .Or(Parse.String(AnyKeyword))
                     .Text()
-                select new HclPrimitiveTypeElement {Value = value}).Token();
+                select new HclPrimitiveTypeElement { Value = value }).Token();
 
         /// <summary>
         ///     New in 0.12 - An primitive definition with quotes
@@ -556,7 +556,7 @@ namespace Octopus.CoreParsers.Hcl
                     .Or(Parse.String(AnyKeyword))
                     .Text()
                 from endQuote in DelimiterQuote
-                select new HclPrimitiveTypeElement {Value = value}).Token();
+                select new HclPrimitiveTypeElement { Value = value }).Token();
 
         /// <summary>
         ///     New in 0.12 - An primitive definition
@@ -580,7 +580,7 @@ namespace Octopus.CoreParsers.Hcl
                 ).Token().Many()
                 from closeCurly in RightCurly
                 from closeBracket in RightBracket
-                select new HclObjectTypeElement {Children = content}).Token();
+                select new HclObjectTypeElement { Children = content }).Token();
 
         /// <summary>
         ///     New in 0.12 - An set definition
@@ -594,7 +594,7 @@ namespace Octopus.CoreParsers.Hcl
                     .Or(TupleTypeProperty)
                     .Or(PrimitiveTypeProperty)
                 from closeBracket in RightBracket
-                select new HclSetTypeElement {Child = value}).Token();
+                select new HclSetTypeElement { Child = value }).Token();
 
         /// <summary>
         ///     New in 0.12 - An list definition
@@ -608,7 +608,7 @@ namespace Octopus.CoreParsers.Hcl
                     .Or(TupleTypeProperty)
                     .Or(PrimitiveTypeProperty)
                 from closeBracket in RightBracket
-                select new HclListTypeElement {Child = value}).Token();
+                select new HclListTypeElement { Child = value }).Token();
 
         /// <summary>
         ///     New in 0.12 - An tuple definition.
@@ -629,7 +629,7 @@ namespace Octopus.CoreParsers.Hcl
                 ).Token().Many()
                 from closeSquare in RightSquareBracket
                 from closeBracket in RightBracket
-                select new HclTupleTypeElement {Children = content}).Token();
+                select new HclTupleTypeElement { Children = content }).Token();
 
         /// <summary>
         ///     New in 0.12 - An map definition
@@ -643,7 +643,7 @@ namespace Octopus.CoreParsers.Hcl
                     .Or(TupleTypeProperty)
                     .Or(PrimitiveTypeProperty)
                 from closeBracket in RightBracket
-                select new HclMapTypeElement {Child = value}).Token();
+                select new HclMapTypeElement { Child = value }).Token();
 
         /// <summary>
         ///     The value of an individual item in a list
@@ -673,7 +673,7 @@ namespace Octopus.CoreParsers.Hcl
             from lbracket in LeftCurly
             from content in Properties.Optional()
             from rbracket in RightCurly
-            select new HclMapElement {Children = content.GetOrDefault()}
+            select new HclMapElement { Children = content.GetOrDefault() }
         ).Token();
 
         /// <summary>
@@ -694,7 +694,7 @@ namespace Octopus.CoreParsers.Hcl
                 select embeddedValues
             ).Token().Many()
             from close in RightSquareBracket
-            select new HclListElement {Children = content}
+            select new HclListElement { Children = content }
         ).Token();
 
         /// <summary>
@@ -706,7 +706,7 @@ namespace Octopus.CoreParsers.Hcl
             from name in Identifier
             from eql in EqualsOrColon
             from value in UnquotedContent
-            select new HclUnquotedExpressionPropertyElement {Name = name, Child = value, NameQuoted = false};
+            select new HclUnquotedExpressionPropertyElement { Name = name, Child = value, NameQuoted = false };
 
         /// <summary>
         ///     Represents a value that can be assigned to a property
@@ -717,7 +717,7 @@ namespace Octopus.CoreParsers.Hcl
             from name in StringLiteralQuote
             from eql in EqualsOrColon
             from value in UnquotedContent
-            select new HclUnquotedExpressionPropertyElement {Name = name, Child = value, NameQuoted = true};
+            select new HclUnquotedExpressionPropertyElement { Name = name, Child = value, NameQuoted = true };
 
         /// <summary>
         ///     Represents a value that can be assigned to a property
@@ -728,7 +728,7 @@ namespace Octopus.CoreParsers.Hcl
             from name in Identifier
             from eql in EqualsOrColon
             from value in PropertyValue
-            select new HclSimplePropertyElement {Name = name, Child = value, NameQuoted = false};
+            select new HclSimplePropertyElement { Name = name, Child = value, NameQuoted = false };
 
         /// <summary>
         ///     Represents a value that can be assigned to a property
@@ -739,7 +739,7 @@ namespace Octopus.CoreParsers.Hcl
             from name in StringLiteralQuote
             from eql in EqualsOrColon
             from value in PropertyValue
-            select new HclSimplePropertyElement {Name = name, Child = value, NameQuoted = true};
+            select new HclSimplePropertyElement { Name = name, Child = value, NameQuoted = true };
 
         /// <summary>
         ///     Represents a multiline string
@@ -780,7 +780,7 @@ namespace Octopus.CoreParsers.Hcl
             from name in Identifier.Or(StringLiteralQuote)
             from eql in Equal
             from value in ListValue
-            select new HclListPropertyElement {Name = name, Children = value.Children, NameQuoted = false};
+            select new HclListPropertyElement { Name = name, Children = value.Children, NameQuoted = false };
 
         /// <summary>
         ///     Represents a list property
@@ -789,7 +789,7 @@ namespace Octopus.CoreParsers.Hcl
             from name in StringLiteralQuote
             from eql in Equal
             from value in ListValue
-            select new HclListPropertyElement {Name = name, Children = value.Children, NameQuoted = true};
+            select new HclListPropertyElement { Name = name, Children = value.Children, NameQuoted = true };
 
         /// <summary>
         ///     Represent a map assigned to a named value
@@ -798,7 +798,7 @@ namespace Octopus.CoreParsers.Hcl
             from name in Identifier.Or(StringLiteralQuote)
             from eql in Equal
             from properties in MapValue
-            select new HclMapPropertyElement {Name = name, Children = properties.Children};
+            select new HclMapPropertyElement { Name = name, Children = properties.Children };
 
         /// <summary>
         ///     New in 0.12 - Represent a property holding a type
@@ -811,7 +811,7 @@ namespace Octopus.CoreParsers.Hcl
                     .Or(ListTypeProperty)
                     .Or(SetTypeProperty)
                     .Or(TupleTypeProperty)
-                select new HclTypePropertyElement {Name = name, Child = value, NameQuoted = false}).Token();
+                select new HclTypePropertyElement { Name = name, Child = value, NameQuoted = false }).Token();
 
         /// <summary>
         ///     New in 0.12 - An plain type definition
@@ -820,7 +820,7 @@ namespace Octopus.CoreParsers.Hcl
             (from name in Identifier.Or(StringLiteralQuote)
                 from eql in Equal
                 from value in PrimitiveTypeProperty
-                select new HclTypePropertyElement {Name = name, Child = value, NameQuoted = false}).Token();
+                select new HclTypePropertyElement { Name = name, Child = value, NameQuoted = false }).Token();
 
         /// <summary>
         ///     Represents a named element with child properties
@@ -831,7 +831,7 @@ namespace Octopus.CoreParsers.Hcl
             from lbracket in LeftCurly
             from properties in Properties.Optional()
             from rbracket in RightCurly
-            select new HclElement {Name = name, Children = properties.GetOrDefault()};
+            select new HclElement { Name = name, Children = properties.GetOrDefault() };
 
         /// <summary>
         ///     Represents a named element with a value and child properties
@@ -844,7 +844,7 @@ namespace Octopus.CoreParsers.Hcl
             from lbracket in LeftCurly
             from properties in Properties.Optional()
             from rbracket in RightCurly
-            select new HclElement {Name = name, Value = value, Children = properties.GetOrDefault()};
+            select new HclElement { Name = name, Value = value, Children = properties.GetOrDefault() };
 
         /// <summary>
         ///     Represents named elements with values and types. These are things like resources.
@@ -857,7 +857,7 @@ namespace Octopus.CoreParsers.Hcl
             from lbracket in LeftCurly
             from properties in Properties.Optional()
             from rbracket in RightCurly
-            select new HclElement {Name = name, Value = value, Type = type, Children = properties.GetOrDefault()};
+            select new HclElement { Name = name, Value = value, Type = type, Children = properties.GetOrDefault() };
 
         /// <summary>
         ///     Represents the properties that can be added to an element
@@ -887,7 +887,7 @@ namespace Octopus.CoreParsers.Hcl
         /// </summary>
         public static readonly Parser<HclElement> HclTemplate =
             from children in Properties.End()
-            select new HclRootElement {Children = children};
+            select new HclRootElement { Children = children };
 
         /// <summary>
         ///     Replace line breaks with the Unix style line breaks
