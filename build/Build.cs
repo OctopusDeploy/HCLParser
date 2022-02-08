@@ -72,8 +72,12 @@ class Build : NukeBuild
             DotNetTest(_ => _
                 .SetProjectFile(Solution)
                 .SetConfiguration(Configuration)
+                .SetLoggers("trx")
+                .SetVerbosity(DotNetVerbosity.Normal)
                 .EnableNoBuild()
                 .EnableNoRestore());
+            GlobFiles(SourceDirectory, "**/*.trx")
+                .ForEach(x => CopyFileToDirectory(x, ArtifactsDirectory, FileExistsPolicy.Overwrite));
         });
 
     Target Pack => _ => _
