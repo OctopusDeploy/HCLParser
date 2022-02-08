@@ -343,7 +343,7 @@ namespace Octopus.CoreParsers.Hcl
         [Test]
         public void ParseListWithBool()
         {
-            var template = TerraformLoadTemplate("ListWithBool.txt");
+            var template = TerraformLoadTemplate("listwithboolean.txt");
             var parsed = HclParser.ElementListProperty.Parse(template);
             parsed.Name.Should().Match("bool");
         }
@@ -351,7 +351,7 @@ namespace Octopus.CoreParsers.Hcl
         [Test]
         public void ParseMapWithListWithBool()
         {
-            var template = TerraformLoadTemplate("MapWithListWithBool.txt");
+            var template = TerraformLoadTemplate("mapwithlistwithboolean.txt");
             var parsed = HclParser.ElementMapProperty.Parse(template);
             parsed.Name.Should().Match("permissions");
         }
