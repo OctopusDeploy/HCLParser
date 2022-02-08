@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+    <RootNamespace></RootNamespace>
+    <NoWarn>CS0649;CS0169</NoWarn>
+    <NukeRootDirectory>..</NukeRootDirectory>
+    <NukeScriptDirectory>..</NukeScriptDirectory>
+    <NukeTelemetryVersion>1</NukeTelemetryVersion>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageDownload Include="OctoVersion.Tool" Version="[0.2.963]" />
+    <PackageDownload Include="JetBrains.ReSharper.GlobalTools" Version="[2021.2.0]" />
+    <PackageReference Include="Nuke.Common" Version="6.0.1" />
+  </ItemGroup>
+
+</Project>
