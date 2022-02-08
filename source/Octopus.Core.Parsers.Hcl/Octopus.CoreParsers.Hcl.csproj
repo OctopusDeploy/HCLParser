@@ -5,6 +5,18 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <AssemblyName>Octopus.CoreParsers.Hcl</AssemblyName>
     <RootNamespace>Octopus.Core.Parsers.Hcl</RootNamespace>
+    <PackageId>Octopus.CoreParsers.Hcl</PackageId>
+    <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
+    <PackageProjectUrl>https://github.com/OctopusDeploy/HclParser</PackageProjectUrl>
+    <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+    <Authors>Octopus Deploy</Authors>
+    <Copyright>Octopus Deploy Pty Ltd</Copyright>
+    <PackageTags>hcl</PackageTags>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/OctopusDeploy/HclParser/</RepositoryUrl>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <Description>Provides a way to parse and reprint HCL templates using the Sprache library.</Description>
+    <Product>Octopus.CoreParsers.Hcl</Product>
   </PropertyGroup>
 
   <ItemGroup>
@@ -19,6 +31,10 @@
     <Compile Include="..\Solution Items\VersionInfo.cs">
       <Link>Properties\VersionInfo.cs</Link>
     </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\LICENSE.txt" Pack="true" PackagePath="$(PackageLicenseFile)" />
   </ItemGroup>
 
 </Project>

@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "isRoot": true,
+  "tools": {
+    "octoversion.tool": {
+      "version": "0.2.963",
+      "commands": ["octoversion"]
+    },
+    "nuke.globaltool": {
+      "version": "6.0.1",
+      "commands": ["nuke"]
+    }
+  }
+}
