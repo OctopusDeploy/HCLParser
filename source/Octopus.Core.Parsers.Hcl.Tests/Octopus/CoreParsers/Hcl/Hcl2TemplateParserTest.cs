@@ -46,14 +46,17 @@ namespace Octopus.CoreParsers.Hcl
             result.ToString().Should().Be(expected);
         }
 
-        [TestCase("object({name = \"string\", age = \"number\"})")]
-        [TestCase("object({name = \"string\", age = object({name = \"string\", age = \"number\"})})")]
+        [TestCase("object({name = \"string\", age = \"number\"})", -1)]
+        [TestCase("object({name = \"string\", age = object({name = \"string\", age = \"number\"})})", -1)]
+        [TestCase("object({\n  name = \"string\"\n  # this is a name\n  age = \"number\"\n  # this is the age\n})", 0)]
         [TestCase(
-            "object({name = \"string\", age = object({name = \"string\", age = \"number\"}), address = tuple([\"string\", object({name = \"string\", age = \"number\"})])})")]
-        public void ObjectTypeTest(string index)
+            "object({name = \"string\", age = object({name = \"string\", age = \"number\"}), address = tuple([\"string\", object({name = \"string\", age = \"number\"})])})",
+            -1
+        )]
+        public void ObjectTypeTest(string index, int indent)
         {
             var result = HclParser.ObjectTypeProperty.Parse(index);
-            result.ToString(-1).Should().Be(index);
+            result.ToString(indent).Should().Be(index);
         }
 
         [TestCase("tuple([\"string\", \"number\"])")]

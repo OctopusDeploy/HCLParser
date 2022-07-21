@@ -575,6 +575,7 @@ namespace Octopus.CoreParsers.Hcl
                 (
                     from value in ElementTypedObjectProperty
                         .Or(PrimitiveTypeObjectProperty)
+                        .Or(SingleLineComment)
                     from comma in Comma.Optional()
                     select value
                 ).Token().Many()
