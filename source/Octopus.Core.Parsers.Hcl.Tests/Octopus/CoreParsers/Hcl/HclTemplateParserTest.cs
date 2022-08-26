@@ -310,7 +310,7 @@ namespace Octopus.CoreParsers.Hcl
         {
             var template = TerraformLoadTemplate("multilinestring.txt");
             var parsed = HclParser.HereDoc.Parse(template);
-            parsed.Item3.Should().Match("\nHello\nWorld\n");
+            parsed.Item3.Should().Match("\nHello\nWorld\nTHEPARSERSHOULDNOTMATCHTHISDESCRIPTION\nHello\nAgain\n");
         }
 
         [Test]
