@@ -285,7 +285,10 @@ namespace Octopus.CoreParsers.Hcl
                 from rest in Parse.AnyChar.Except(
                     Parse.Contained(
                         Parse.String(marker),
-                        Parse.WhiteSpace.AtLeastOnce(),
+                        Parse.Concat(
+                            Parse.LineEnd,
+                            Parse.WhiteSpace.Many()
+                        ).Or(Parse.LineEnd),
                         Parse.WhiteSpace.Until(Parse.LineTerminator)
                     )
                 ).Many().Text()
