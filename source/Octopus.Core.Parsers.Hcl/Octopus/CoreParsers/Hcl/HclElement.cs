@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Octopus.CoreUtilities.Extensions;
 using Sprache;
 
 namespace Octopus.CoreParsers.Hcl
@@ -163,7 +162,7 @@ namespace Octopus.CoreParsers.Hcl
         public virtual HclElement Child
         {
             get => Children?.FirstOrDefault();
-            set => Children = value?.ToEnumerable();
+            set => Children = value is not null ? new[] { value } : null;
         }
 
         /// <summary>
@@ -186,8 +185,8 @@ namespace Octopus.CoreParsers.Hcl
             var separator = indent == -1 ? ", " : "\n";
 
             return indentString + OriginalName +
-                   ProcessedValue?.Map(a => " \"" + EscapeQuotes(a) + "\"") +
-                   Type?.Map(a => " \"" + EscapeQuotes(a) + "\"") +
+                   RunIfNotNull(ProcessedValue, a => " \"" + EscapeQuotes(a) + "\"") +
+                   RunIfNotNull(Type, a => " \"" + EscapeQuotes(a) + "\"") +
                    " {" + lineBreak +
                    string.Join(separator,
                        Children?.Select(child => child.ToString(nextIndent)) ?? Enumerable.Empty<string>()) +
@@ -254,11 +253,16 @@ namespace Octopus.CoreParsers.Hcl
             return hash;
         }
 
-        protected string EscapeQuotes(string input)
+        protected static string EscapeQuotes(string input)
         {
             if (input == null) throw new ArgumentException("input can not be null");
 
             return HclParser.StringLiteralQuoteContentReverse.Parse(input);
+        }
+
+        private static TResult RunIfNotNull<TSource, TResult>(TSource input, Func<TSource, TResult> command)
+        {
+            return input is null ? default : command(input);
         }
     }
 }
