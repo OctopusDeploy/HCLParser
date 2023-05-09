@@ -6,11 +6,10 @@ using System.Reflection;
 [assembly: AssemblyInformationalVersion("0.0.0-local")]
 [assembly: AssemblyFileVersion("0.0.0.0")]
 
-namespace Octopus
+namespace Octopus;
+
+internal static class GitVersionInformation
 {
-    internal static class GitVersionInformation
-    {
-        public static string BranchName = "UNKNOWNBRANCH";
-        public static string NuGetVersion = "0.0.0-local";
-    }
+    public static string BranchName = "UNKNOWNBRANCH";
+    public static string NuGetVersion = "0.0.0-local";
 }
