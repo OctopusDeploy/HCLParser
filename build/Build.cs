@@ -22,17 +22,23 @@ using static Nuke.Common.Tools.DotNet.DotNetTasks;
 [ShutdownDotNetAfterServerBuild]
 class Build : NukeBuild
 {
-    [Parameter("Configuration to build - Default is 'Debug' (local) or 'Release' (server)")]
-    public Configuration Configuration => IsLocalBuild ? Configuration.Debug : Configuration.Release;
-
-    [Parameter("Branch name for OctoVersion to use to calculate the version number. Can be set via the environment variable OCTOVERSION_CurrentBranch.", Name = "OCTOVERSION_CurrentBranch")]
-    readonly string BranchName;
-    [Parameter("Whether to auto-detect the branch name - this is okay for a local build, but should not be used under CI.")]
+    [Parameter(
+        "Whether to auto-detect the branch name - this is okay for a local build, but should not be used under CI.")]
     readonly bool AutoDetectBranch = IsLocalBuild;
-    [OctoVersion(UpdateBuildNumber = true, BranchParameter = nameof(BranchName), AutoDetectBranchParameter = nameof(AutoDetectBranch), Framework = "net6.0")]
+
+    [Parameter(
+        "Branch name for OctoVersion to use to calculate the version number. Can be set via the environment variable OCTOVERSION_CurrentBranch.",
+        Name = "OCTOVERSION_CurrentBranch")]
+    readonly string BranchName;
+
+    [OctoVersion(UpdateBuildNumber = true, BranchParameter = nameof(BranchName),
+        AutoDetectBranchParameter = nameof(AutoDetectBranch), Framework = "net6.0")]
     readonly OctoVersionInfo OctoVersionInfo;
 
     [Solution] readonly Solution Solution;
+
+    [Parameter("Configuration to build - Default is 'Debug' (local) or 'Release' (server)")]
+    public Configuration Configuration => IsLocalBuild ? Configuration.Debug : Configuration.Release;
 
     AbsolutePath SourceDirectory => RootDirectory / "source";
     AbsolutePath TestsDirectory => RootDirectory / "tests";
@@ -48,6 +54,7 @@ class Build : NukeBuild
             EnsureCleanDirectory(ArtifactsDirectory);
             EnsureCleanDirectory(PublishDirectory);
         });
+
     Target Restore => _ => _
         .DependsOn(Clean)
         .Executes(() =>
@@ -55,6 +62,7 @@ class Build : NukeBuild
             DotNetRestore(s => s
                 .SetProjectFile(Solution));
         });
+
     Target Compile => _ => _
         .DependsOn(Restore)
         .Executes(() =>
@@ -65,6 +73,7 @@ class Build : NukeBuild
                 .SetVersion(OctoVersionInfo.FullSemVer)
                 .EnableNoRestore());
         });
+
     Target Test => _ => _
         .DependsOn(Compile)
         .Executes(() =>
@@ -93,7 +102,8 @@ class Build : NukeBuild
                 .AddProperty("Version", OctoVersionInfo.FullSemVer)
             );
 
-            TeamCity.Instance?.PublishArtifacts(ArtifactsDirectory / $"Octopus.CoreParsers.Hcl.{OctoVersionInfo.FullSemVer}.nupkg");
+            TeamCity.Instance?.PublishArtifacts(ArtifactsDirectory /
+                                                $"Octopus.CoreParsers.Hcl.{OctoVersionInfo.FullSemVer}.nupkg");
         });
 
     Target CopyToLocalPackages => _ => _
