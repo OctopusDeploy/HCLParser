@@ -29,7 +29,7 @@ class Build : NukeBuild
     readonly string BranchName;
     [Parameter("Whether to auto-detect the branch name - this is okay for a local build, but should not be used under CI.")]
     readonly bool AutoDetectBranch = IsLocalBuild;
-    [OctoVersion(UpdateBuildNumber = true, BranchParameter = nameof(BranchName), AutoDetectBranchParameter = nameof(AutoDetectBranch), Framework = "net6.0")]
+    [OctoVersion(UpdateBuildNumber = true, BranchParameter = nameof(BranchName), AutoDetectBranchParameter = nameof(AutoDetectBranch), Framework = "net8.0")]
     readonly OctoVersionInfo OctoVersionInfo;
 
     [Solution] readonly Solution Solution;
