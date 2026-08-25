@@ -1,0 +1,16 @@
+# Keeps dependencies current so CVE fixes arrive as routine PRs.
+version: 2
+updates:
+  - package-ecosystem: nuget
+    directories:
+      - "/build"
+      - "/source"
+      - "/source/Octopus.Core.Parsers.Hcl"
+      - "/source/Octopus.Core.Parsers.Hcl.Tests"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      nuget:
+        patterns:
+          - "*"
