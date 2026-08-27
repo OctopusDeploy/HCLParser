@@ -65,3 +65,6 @@ source/OctopusTools.v2.ncrunchsolution
 /publish/
 TestResult.xml
 .idea
+
+# macOS Finder metadata
+.DS_Store
