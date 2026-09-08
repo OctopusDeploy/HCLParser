@@ -4,7 +4,7 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
     <RootNamespace></RootNamespace>
-    <NoWarn>CS0649;CS0169</NoWarn>
+    <NoWarn>CS0649;CS0169;CS8618</NoWarn>
     <NukeRootDirectory>..</NukeRootDirectory>
     <NukeScriptDirectory>..</NukeScriptDirectory>
     <NukeTelemetryVersion>1</NukeTelemetryVersion>
@@ -12,9 +12,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageDownload Include="Octopus.OctoVersion.Tool" Version="[1.1.74]" />
-    <PackageDownload Include="JetBrains.ReSharper.GlobalTools" Version="[2021.2.0]" />
-    <PackageReference Include="Nuke.Common" Version="6.0.1" />
+    <PackageReference Include="Nuke.Common" Version="10.1.0" />
+    <PackageReference Include="Octopus.OctoVersion.Tool" Version="1.1.74" ExcludeAssets="all" />
   </ItemGroup>
 
 </Project>

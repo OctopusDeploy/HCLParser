@@ -68,3 +68,6 @@ TestResult.xml
 
 # macOS Finder metadata
 .DS_Store
+
+# Test output
+TestResults/

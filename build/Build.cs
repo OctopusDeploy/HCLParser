@@ -1,70 +1,66 @@
-// ReSharper disable RedundantUsingDirective
-
-using System;
-using System.Linq;
 using Nuke.Common;
-using Nuke.Common.CI;
 using Nuke.Common.CI.TeamCity;
 using Nuke.Common.Execution;
-using Nuke.Common.Git;
 using Nuke.Common.IO;
 using Nuke.Common.ProjectModel;
-using Nuke.Common.Tooling;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Tools.OctoVersion;
 using Nuke.Common.Utilities.Collections;
-using static Nuke.Common.EnvironmentInfo;
-using static Nuke.Common.IO.FileSystemTasks;
-using static Nuke.Common.IO.PathConstruction;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 
-[CheckBuildProjectConfigurations]
-[ShutdownDotNetAfterServerBuild]
+[UnsetVisualStudioEnvironmentVariables]
 class Build : NukeBuild
 {
     [Parameter("Configuration to build - Default is 'Debug' (local) or 'Release' (server)")]
-    public Configuration Configuration => IsLocalBuild ? Configuration.Debug : Configuration.Release;
-
-    [Parameter("Branch name for OctoVersion to use to calculate the version number. Can be set via the environment variable OCTOVERSION_CurrentBranch.", Name = "OCTOVERSION_CurrentBranch")]
-    readonly string BranchName;
-    [Parameter("Whether to auto-detect the branch name - this is okay for a local build, but should not be used under CI.")]
-    readonly bool AutoDetectBranch = IsLocalBuild;
-    [OctoVersion(UpdateBuildNumber = true, BranchParameter = nameof(BranchName), AutoDetectBranchParameter = nameof(AutoDetectBranch), Framework = "net8.0")]
-    readonly OctoVersionInfo OctoVersionInfo;
+    readonly Configuration Configuration = IsLocalBuild ? Configuration.Debug : Configuration.Release;
 
     [Solution] readonly Solution Solution;
 
+    [Parameter("Branch name for OctoVersion to use to calculate the version number. Can be set via the environment variable OCTOVERSION_CurrentBranch.",
+        Name = "OCTOVERSION_CurrentBranch")]
+    readonly string BranchName;
+
+    [Parameter("Whether to auto-detect the branch name - this is okay for a local build, but should not be used under CI.")]
+    readonly bool AutoDetectBranch = IsLocalBuild;
+
+    [OctoVersion(UpdateBuildNumber = true, BranchMember = nameof(BranchName),
+        AutoDetectBranchMember = nameof(AutoDetectBranch), Framework = "net10.0")]
+    readonly OctoVersionInfo OctoVersionInfo;
+
     AbsolutePath SourceDirectory => RootDirectory / "source";
-    AbsolutePath TestsDirectory => RootDirectory / "tests";
     AbsolutePath ArtifactsDirectory => RootDirectory / "artifacts";
-    AbsolutePath PublishDirectory => RootDirectory / "publish";
     AbsolutePath LocalPackagesDirectory => RootDirectory / ".." / "LocalPackages";
 
     Target Clean => _ => _
+        .Before(Restore)
         .Executes(() =>
         {
-            SourceDirectory.GlobDirectories("**/bin", "**/obj").ForEach(DeleteDirectory);
-            TestsDirectory.GlobDirectories("**/bin", "**/obj", "**/TestResults").ForEach(DeleteDirectory);
-            EnsureCleanDirectory(ArtifactsDirectory);
-            EnsureCleanDirectory(PublishDirectory);
+            SourceDirectory.GlobDirectories("**/bin", "**/obj", "**/TestResults").ForEach(d => d.DeleteDirectory());
+            ArtifactsDirectory.CreateOrCleanDirectory();
         });
+
     Target Restore => _ => _
-        .DependsOn(Clean)
         .Executes(() =>
         {
-            DotNetRestore(s => s
+            DotNetRestore(_ => _
                 .SetProjectFile(Solution));
         });
+
     Target Compile => _ => _
+        .DependsOn(Clean)
         .DependsOn(Restore)
         .Executes(() =>
         {
-            DotNetBuild(s => s
+            Serilog.Log.Information("Building Octopus.CoreParsers.Hcl v{Version}", OctoVersionInfo.FullSemVer);
+
+            DotNetBuild(_ => _
                 .SetProjectFile(Solution)
                 .SetConfiguration(Configuration)
                 .SetVersion(OctoVersionInfo.FullSemVer)
+                .SetInformationalVersion(OctoVersionInfo.InformationalVersion)
                 .EnableNoRestore());
         });
+
     Target Test => _ => _
         .DependsOn(Compile)
         .Executes(() =>
@@ -73,11 +69,13 @@ class Build : NukeBuild
                 .SetProjectFile(Solution)
                 .SetConfiguration(Configuration)
                 .SetLoggers("trx")
-                .SetVerbosity(DotNetVerbosity.Normal)
+                .SetVerbosity(DotNetVerbosity.normal)
                 .EnableNoBuild()
                 .EnableNoRestore());
-            GlobFiles(SourceDirectory, "**/*.trx")
-                .ForEach(x => CopyFileToDirectory(x, ArtifactsDirectory, FileExistsPolicy.Overwrite));
+
+            // TeamCity reads test results from the published artifacts.
+            SourceDirectory.GlobFiles("**/*.trx")
+                .ForEach(f => f.CopyToDirectory(ArtifactsDirectory, ExistsPolicy.FileOverwrite));
         });
 
     Target Pack => _ => _
@@ -90,22 +88,20 @@ class Build : NukeBuild
                 .SetConfiguration(Configuration)
                 .SetOutputDirectory(ArtifactsDirectory)
                 .EnableNoBuild()
-                .AddProperty("Version", OctoVersionInfo.FullSemVer)
-            );
+                .AddProperty("Version", OctoVersionInfo.FullSemVer));
 
             TeamCity.Instance?.PublishArtifacts(ArtifactsDirectory / $"Octopus.CoreParsers.Hcl.{OctoVersionInfo.FullSemVer}.nupkg");
         });
 
     Target CopyToLocalPackages => _ => _
         .OnlyWhenStatic(() => IsLocalBuild)
-        .DependsOn(Pack)
+        .TriggeredBy(Pack)
         .Executes(() =>
         {
-            GlobFiles(ArtifactsDirectory, $"*.{OctoVersionInfo.FullSemVer}.nupkg")
-                .ForEach(x => CopyFileToDirectory(x, LocalPackagesDirectory, FileExistsPolicy.Overwrite));
+            LocalPackagesDirectory.CreateDirectory();
+            (ArtifactsDirectory / $"Octopus.CoreParsers.Hcl.{OctoVersionInfo.FullSemVer}.nupkg")
+                .CopyToDirectory(LocalPackagesDirectory, ExistsPolicy.FileOverwrite);
         });
 
-    public static int Main() => Execute<Build>(
-        x => x.Pack,
-        x => x.CopyToLocalPackages);
+    public static int Main() => Execute<Build>(x => x.Pack);
 }
