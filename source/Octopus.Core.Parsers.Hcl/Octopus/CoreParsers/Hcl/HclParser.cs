@@ -282,11 +282,18 @@ namespace Octopus.CoreParsers.Hcl
                 from indentMarker in Parse.Char('-').Optional()
                 from marker in Parse.AnyChar.Except(Parse.Char(LineBreak)).Many().Text()
                 from lineBreak in Parse.Char(LineBreak)
-                from rest in Parse.AnyChar.Except(Parse.String(marker))
-                    .Or(Parse.Char(LineBreak))
-                    .Many().Text()
-                from last in Parse.String(marker)
-                select Tuple.Create(marker, indentMarker.IsDefined, lineBreak + rest)).Token();
+                from rest in Parse.AnyChar.Except(
+                    Parse.Contained(
+                        Parse.String(marker),
+                        Parse.Concat(
+                            Parse.LineEnd,
+                            Parse.WhiteSpace.Many()
+                        ).Or(Parse.LineEnd),
+                        Parse.WhiteSpace.Until(Parse.LineTerminator)
+                    )
+                ).Many().Text()
+                from whitespace in Parse.WhiteSpace.Until(Parse.String(marker)).Text()
+                select Tuple.Create(marker, indentMarker.IsDefined, $"{lineBreak}{rest}{whitespace}")).Token();
 
         /// <summary>
         ///     Represents the "//" used to start a comment
@@ -575,6 +582,7 @@ namespace Octopus.CoreParsers.Hcl
                 (
                     from value in ElementTypedObjectProperty
                         .Or(PrimitiveTypeObjectProperty)
+                        .Or(SingleLineComment)
                     from comma in Comma.Optional()
                     select value
                 ).Token().Many()
