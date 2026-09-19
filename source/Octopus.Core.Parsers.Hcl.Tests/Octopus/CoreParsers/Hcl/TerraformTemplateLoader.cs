@@ -1,18 +1,16 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using System.Reflection;
 
-namespace Octopus.CoreParsers.Hcl
-{
-    public class TerraformTemplateLoader
-    {
-        protected string TerraformLoadTemplate(string fileName, string directory = "TemplateSamples")
-        {
-            var templatesPath = Path.Combine(
-                Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
-                Path.Combine("Octopus", "CoreParsers", "Hcl", directory));
+namespace Octopus.CoreParsers.Hcl;
 
-            return HclParser.NormalizeLineEndings(File.ReadAllText(Path.Combine(templatesPath, fileName))).Trim();
-        }
+public class TerraformTemplateLoader
+{
+    protected string TerraformLoadTemplate(string fileName, string directory = "TemplateSamples")
+    {
+        var templatesPath = Path.Combine(
+            Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
+            Path.Combine("Octopus", "CoreParsers", "Hcl", directory));
+
+        return HclParser.NormalizeLineEndings(File.ReadAllText(Path.Combine(templatesPath, fileName))).Trim();
     }
 }
